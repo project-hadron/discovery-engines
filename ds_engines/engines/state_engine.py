@@ -21,7 +21,6 @@ class StateEngine(object):
     __event_counter: int
     __last_persist_time: datetime
 
-
     def __init__(self, contract_name: str, state_engine_properties: [ConnectorContract]):
         """ Encapsulation class for the state engine manager
 
