@@ -10,7 +10,7 @@ import matplotlib
 import numpy as np
 import pandas as pd
 
-from ds_engines.engines.state_engine import StateEngine
+from ds_engines.engines.event_book import EventBook
 from ds_behavioral import DataBuilderTools as tools
 
 matplotlib.use("TkAgg")
@@ -34,7 +34,7 @@ def ignore_warnings(message: str = None):
 class StateEngineTest(unittest.TestCase):
 
     def setUp(self):
-        os.environ['STATE_CONTRACT_PATH'] = os.path.join(os.environ['PWD'], 'work', 'contract')
+        os.environ['STATE_CONTRACT_PATH'] = os.path.join(os.environ['PWD'], 'work')
         pass
 
     def tearDown(self):
@@ -45,41 +45,50 @@ class StateEngineTest(unittest.TestCase):
 
     def test_runs(self):
         """Basic smoke test"""
-        StateEngine.from_env()
+        EventBook.from_env()
 
     def test_events(self):
-        engine = StateEngine.from_env()
-        selection = list(string.ascii_uppercase)
+        engine = EventBook.from_env()
+        selection = list("ABCD")
         master = pd.DataFrame(columns=selection)
         engine.add_event(event=master)
-        for counter in range(100):
-            sample = tools.get_number(1, 10).pop()
-            # create the event DataFrame with a randome number of headers
-            columns = tools.get_category(selection=selection, at_most=1, size=sample)
-            event = pd.DataFrame(columns=columns)
-            # random bulk upload
-            ids = tools.get_number(100, 999, at_most=1, size=tools.get_number(1, 10))
-            for id in ids:
-                values = tools.get_number(100, size=sample)
-                event.loc[id] = values
-            # add the event
-            engine.add_event(event=event)
-        _, result = engine.get_current_state()
-        engine.persist_state(result)
-        print(engine)
+        self.assertEqual((0,4), engine.current_state[1].shape)
+        # add event
+        event = pd.DataFrame({'A': [1,1,1], 'E': [1,1,1]})
+        engine.add_event(event=event)
+        self.assertEqual((3, 5), engine.current_state[1].shape)
+        event = pd.DataFrame({'A': [1, 0, 1]})
+        engine.increment_event(event=event)
+        control = pd.Series([2,1,2])
+        result = engine.current_state[1]['A']
+        self.assertCountEqual(control, result)
+        engine.decrement_event(event=event)
+        control = pd.Series([1,1,1])
+        result = engine.current_state[1]['A']
+        self.assertCountEqual(control, result)
 
     def test_speed(self):
-        engine = StateEngine.from_env()
+        engine = EventBook.from_env()
         selection = list(string.ascii_uppercase)
         master = pd.DataFrame(columns=selection)
-        engine.add_event(event=master)
+        engine.increment_event(event=master)
         event = pd.DataFrame(columns=list('ABC'))
         event.loc['cu_1'] = [1,1,1]
         start = datetime.now()
-        for counter in range(1000):
+        for counter in range(100):
             engine.add_event(event=event)
         end = datetime.now()
         print("It took {}".format(end - start))
+
+    def test_persist(self):
+        engine = EventBook.from_env()
+        engine.set_persist_counters(state=5)
+        engine.add_event(event=pd.DataFrame(columns=list("ABCD")))
+        event = pd.DataFrame({'A': [1, 0, 1]})
+        for _ in range(6):
+            engine.increment_event(event=event)
+        result = os.path.exists(os.path.join(os.environ['STATE_CONTRACT_PATH'], 'work'))
+
 
 if __name__ == '__main__':
     unittest.main()

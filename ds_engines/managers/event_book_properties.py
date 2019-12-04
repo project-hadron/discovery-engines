@@ -1,13 +1,11 @@
-from datetime import datetime
-
 from ds_foundation.handlers.abstract_handlers import ConnectorContract
 from ds_foundation.properties.abstract_properties import AbstractPropertyManager
 
 __author__ = 'Darryl Oatridge'
 
 
-class StateEnginePropertyManager(AbstractPropertyManager):
-    """Class to deal with the properties of a state contract"""
+class EventBookPropertyManager(AbstractPropertyManager):
+    """Class to deal with the properties of an event book"""
     MANAGER_NAME = 'state_engine'
 
     def __init__(self, contract_name):
@@ -17,13 +15,13 @@ class StateEnginePropertyManager(AbstractPropertyManager):
         """
         if contract_name is None or not isinstance(contract_name, str):
             assert ValueError("The contract_name can't be None or of zero length. '{}' passed".format(contract_name))
-        keys = [{'temporal', ['measure', 'value']}]
+        keys = [{'distance': ['book', 'event']}]
         super().__init__(manager=self.MANAGER_NAME, contract=contract_name, keys=keys)
         self._create_property_structure()
 
     @classmethod
     def from_properties(cls, contract_name: str, connector_contract: ConnectorContract, replace: bool=True):
-        """ A Factory initialisation method to load the parameters from persistance at instantiation
+        """ A Factory initialisation method to load the parameters from persistence at instantiation
 
         :param contract_name: the name of the contract or subset within the property manager
         :param connector_contract: the SourceContract bean for the SourcePersistHandler
@@ -42,7 +40,7 @@ class StateEnginePropertyManager(AbstractPropertyManager):
 
     def reset_contract_properties(self):
         """resets the data contract properties back to it's original state. It also resets the connector handler
-        Note: this method ONLY writes to the properties memmory and must be explicitely persisted
+        Note: this method ONLY writes to the properties memory and must be explicitly persisted
         using the ``save()'' method
         """
         super()._reset_abstract_properties()
@@ -50,19 +48,30 @@ class StateEnginePropertyManager(AbstractPropertyManager):
         return
 
     @property
-    def temporal_measure(self) -> (str, int):
-        """Returns the temporal measure and the value of the measure"""
-        return self.get(self.KEY.temporal.measure_key, ('count', 0))
+    def event_distance(self) -> int:
+        """Returns the events distance counter. Default to zero if not set"""
+        return self.get(self.KEY.distance.event_key, 0)
 
-    def has_temporal_measure(self) -> bool:
-        """Test if the contract has state"""
-        if self.state is None or len(self.state) == 0:
-            return False
-        return True
+    def set_event_distance(self, distance: int):
+        """ sets the event distance. must be a positive integer. """
+        distance = distance if isinstance(distance, int) and distance > 0 else 0
+        self.set(self.KEY.distance.event_key, distance)
+        return
+
+    @property
+    def book_distance(self) -> int:
+        """Returns the book distance. Default to zero if not set"""
+        return self.get(self.KEY.distance.book_key, 0)
+
+    def set_book_distance(self, distance: int):
+        """ sets the state evetns counter. must be a positive integer. """
+        distance = distance if isinstance(distance, int) and distance > 0 else 0
+        self.set(self.KEY.distance.book_key, distance)
+        return
 
     def _create_property_structure(self):
-        if not self.is_key(self.KEY.temporal.measure_key):
-            self.set(self.KEY.temporal.measure_key, 'count')
-        if not self.is_key(self.KEY.temporal.value_key):
-            self.set(self.KEY.temporal.value_key, 0)
+        if not self.is_key(self.KEY.distance.book_key):
+            self.set(self.KEY.distance.book_key, 0)
+        if not self.is_key(self.KEY.distance.event_key):
+            self.set(self.KEY.distance.event_key, 0)
         return

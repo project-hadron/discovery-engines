@@ -18,6 +18,7 @@ import re
 
 here = path.abspath(path.dirname(__file__))
 
+
 def read(*parts):
     filename = path.join(here, *parts)
     with open(filename, encoding='utf-8') as fp:
