@@ -1,9 +1,11 @@
 import os
+import threading
 from datetime import datetime
 import pandas as pd
 
 from ds_engines.managers.event_book_properties import EventBookPropertyManager
 from ds_foundation.handlers.abstract_handlers import ConnectorContract
+from ds_foundation.properties.decorator_patterns import singleton
 
 __author__ = 'Darryl Oatridge'
 
@@ -48,13 +50,13 @@ class EventBook(object):
         This assumes the use of the pandas handler module and pickle persistence on a remote default.
 
          :param contract_name: (optional) The reference name of the properties contract. Default 'primary_book'
-         :param location: (optional) the bucket where the data resource can be found. Default 'discovery-vertical'
+         :param location: (optional) the bucket where the data resource can be found. Default 'ds_discovery'
          :param path: (optional) the path to the persist resources. default 'event_book/persist/{contract_name}/'
          :return: the initialised class instance
          """
         _contract_name = contract_name if isinstance(contract_name, str) else 'primary_book'
-        _location = 'discovery-vertical' if not isinstance(location, str) else location
-        _path = os.path.join('event_book', 'persist', contract_name) if not isinstance(path, str) else path
+        _location = 'ds-discovery' if not isinstance(location, str) else location
+        _path = os.path.join('persist', 'event_book', contract_name) if not isinstance(path, str) else path
         _module_name = 'ds_connectors.handlers.aws_s3_handlers'
         _handler_name = 'AwsS3PersistHandler'
         _properties_resource = os.path.join(_path, 'config_event_book_{}.pickle'.format(_contract_name))
@@ -68,6 +70,7 @@ class EventBook(object):
         if not rtn_cls.book_pm.has_connector(cls.CONNECTOR_EVENTS):
             rtn_cls.set_events_persist_contract(path=_path, location=_location, module_name=_module_name,
                                                 handler=_handler_name, **kwargs)
+
         return rtn_cls
 
     @classmethod
@@ -355,55 +358,69 @@ class EventBook(object):
 
 class EventBookPortfolio(object):
 
-    __book_portfolio = dict()
     MASTER_BOOK = 'master_book'
+    __book_portfolio = dict()
 
     @singleton
     def __new__(cls):
         return super().__new__(cls)
 
     @classmethod
-    def set_state_engine(cls, event_book: EventBook, book: str=None):
+    def portfolio(cls):
+        return list(cls.__book_portfolio.keys())
+
+    @classmethod
+    def is_event_book(cls, book: str=None) -> bool:
+        book = cls.MASTER_BOOK if not isinstance(book, str) else book
+        if book in cls.__book_portfolio.keys() and isinstance(cls.__book_portfolio.get(book), EventBook):
+            return True
+        return False
+
+    @classmethod
+    def get_event_book(cls, book: str=None) -> EventBook:
+        book = cls.MASTER_BOOK if not isinstance(book, str) else book
+        if not cls.is_event_book(book=book):
+            raise ValueError("The event book instance '{}' can't be found in the portfolio.".format(book))
+        return cls.__book_portfolio.get(book)
+
+    @classmethod
+    def set_event_book(cls, event_book: EventBook, book: str=None):
         if not isinstance(event_book, EventBook):
             raise TypeError("The 'event_book' must be an EventBook instance")
         book = cls.MASTER_BOOK if not isinstance(book, str) else book
-        cls.__book_portfolio.update({book: event_book})
-        cls.__state_engine = event_book
+        cls.remove_event_book()
+        with threading.Lock():
+            cls.__book_portfolio.update({book: event_book})
+        return
 
     @classmethod
-    def state_engine(cls, book: str=None):
+    def remove_event_book(cls, book: str=None) -> bool:
         book = cls.MASTER_BOOK if not isinstance(book, str) else book
-        if
-        return cls.__state_engine
+        if book in cls.__book_portfolio.keys():
+            with threading.Lock():
+                cls.__book_portfolio.pop(book)
+            return True
+        return False
 
     @classmethod
-    def current_state(cls):
-        if isinstance(cls.__state_engine, EventBook):
-            with threading.Lock():
-                _state = cls.__state_engine.current_state
-            return _state
-        raise LookupError("The state engine has not been set. Use 'set_state_engine()' to add the state instance")
+    def current_state(cls, book: str=None) -> (datetime, pd.DataFrame):
+        event_book = cls.get_event_book(book=book)
+        return event_book.current_state
 
     @classmethod
-    def add_event(cls, event: pd.DataFrame):
-        if isinstance(cls.__state_engine, EventBook):
-            with threading.Lock():
-                _time = cls.__state_engine.add_event(event=event)
-            return _time
-        raise LookupError("The state engine has not been set. Use 'set_state_engine()' before adding events")
+    def add_event(cls, event: pd.DataFrame, book: str=None):
+        with threading.Lock():
+            _time = cls.get_event_book(book=book).add_event(event=event)
+        return _time
 
     @classmethod
-    def increment_event(cls, event: pd.DataFrame):
-        if isinstance(cls.__state_engine, EventBook):
-            with threading.Lock():
-                _time = cls.__state_engine.increment_event(event=event)
-            return _time
-        raise LookupError("The state engine has not been set. Use 'set_state_engine()' before incrementing events")
+    def increment_event(cls, event: pd.DataFrame, book: str=None):
+        with threading.Lock():
+            _time = cls.get_event_book(book=book).increment_event(event=event)
+        return _time
 
     @classmethod
-    def decrement_event(cls, event: pd.DataFrame):
-        if isinstance(cls.__state_engine, EventBook):
-            with threading.Lock():
-                _time = cls.__state_engine.decrement_event(event=event)
-            return _time
-        raise LookupError("The state engine has not been set. Use 'set_state_engine()' before decrementing events")
+    def decrement_event(cls, event: pd.DataFrame, book: str=None):
+        with threading.Lock():
+            _time = cls.get_event_book(book=book).decrement_event(event=event)
+        return _time

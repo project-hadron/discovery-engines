@@ -15,7 +15,7 @@ class EventBookPropertyManager(AbstractPropertyManager):
         """
         if contract_name is None or not isinstance(contract_name, str):
             assert ValueError("The contract_name can't be None or of zero length. '{}' passed".format(contract_name))
-        keys = [{'distance': ['book', 'event']}]
+        keys = [{'distance': ['book', 'event']}, 'persist']
         super().__init__(manager=self.MANAGER_NAME, contract=contract_name, keys=keys)
         self._create_property_structure()
 
@@ -69,9 +69,22 @@ class EventBookPropertyManager(AbstractPropertyManager):
         self.set(self.KEY.distance.book_key, distance)
         return
 
+    @property
+    def persist_intent(self) -> int:
+        """Returns the persisted intent."""
+        return self.get(self.KEY.persist_key, {})
+
+    def set_persist_intent(self, persist_intent: dict):
+        """ sets the persisted intent structure. """
+        persist_intent = persist_intent if isinstance(persist_intent, dict) else {}
+        self.set(self.KEY.persist_key, persist_intent)
+        return
+
     def _create_property_structure(self):
         if not self.is_key(self.KEY.distance.book_key):
             self.set(self.KEY.distance.book_key, 0)
         if not self.is_key(self.KEY.distance.event_key):
             self.set(self.KEY.distance.event_key, 0)
+        if not self.is_key(self.KEY.persist_key):
+            self.set(self.KEY.persist_key, {})
         return
