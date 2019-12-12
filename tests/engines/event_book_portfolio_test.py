@@ -6,7 +6,6 @@ import unittest
 import pandas as pd
 
 from ds_engines.engines.event_book import EventBook
-from tests.engines.state_model import StateModel
 
 
 class MyTestCase(unittest.TestCase):

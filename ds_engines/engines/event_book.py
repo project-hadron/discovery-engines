@@ -19,19 +19,19 @@ class EventBook(object):
     __book_state: pd.DataFrame
     __events_log: dict
     __event_count: int
-    __state_count: int
+    __book_count: int
 
-    def __init__(self, contract_name: str, event_book_properties: [ConnectorContract]):
+    def __init__(self, book_name: str, event_book_properties: [ConnectorContract]):
         """ Encapsulation class for the management of Event Books
 
-        :param contract_name: The name of the properties contract
+        :param book_name: The name of the event book
         :param event_book_properties: The persist handler for the event book properties
         """
-        if not isinstance(contract_name, str) or len(contract_name) < 1:
+        if not isinstance(book_name, str) or len(book_name) < 1:
             raise ValueError("The contract name must be a valid string")
-        self._contract_name = contract_name
+        self._book_name = book_name
         # set property managers
-        self._book_pm = EventBookPropertyManager.from_properties(contract_name=self._contract_name,
+        self._book_pm = EventBookPropertyManager.from_properties(book_name=self._book_name,
                                                                  connector_contract=event_book_properties)
         self.CONNECTOR_PROPERTIES = self._book_pm.CONTRACT_CONNECTOR
         if self._book_pm.has_persisted_properties():
@@ -42,28 +42,27 @@ class EventBook(object):
         self.__book_state = pd.DataFrame()
         self.__events_log = dict()
         self.__event_count = 0
-        self.__state_count = 0
+        self.__book_count = 0
 
     @classmethod
-    def from_remote(cls, contract_name: str=None, location: str=None, path: str=None, **kwargs):
+    def from_remote(cls, book_name: str, location: str=None, path: str=None, **kwargs):
         """ Class Factory Method that builds the connector handlers from the default remote.
         This assumes the use of the pandas handler module and pickle persistence on a remote default.
 
-         :param contract_name: (optional) The reference name of the properties contract. Default 'primary_book'
+         :param book_name: (optional) The reference name of the event book. Default 'primary_book'
          :param location: (optional) the bucket where the data resource can be found. Default 'ds_discovery'
-         :param path: (optional) the path to the persist resources. default 'event_book/persist/{contract_name}/'
+         :param path: (optional) the path to the persist resources. default 'event_book/persist/{book_name}/'
          :return: the initialised class instance
          """
-        _contract_name = contract_name if isinstance(contract_name, str) else 'primary_book'
         _location = 'ds-discovery' if not isinstance(location, str) else location
-        _path = os.path.join('persist', 'event_book', contract_name) if not isinstance(path, str) else path
+        _path = os.path.join('persist', 'event_book', book_name) if not isinstance(path, str) else path
         _module_name = 'ds_connectors.handlers.aws_s3_handlers'
         _handler_name = 'AwsS3PersistHandler'
-        _properties_resource = os.path.join(_path, 'config_event_book_{}.pickle'.format(_contract_name))
+        _properties_resource = os.path.join(_path, 'config_event_book_{}.pickle'.format(book_name))
         _properties_connector = ConnectorContract(resource=_properties_resource, connector_type='pickle',
                                                   location=_location, module_name=_module_name,
                                                   handler='AwsS3PersistHandler')
-        rtn_cls = cls(contract_name=_contract_name, event_book_properties=_properties_connector)
+        rtn_cls = cls(book_name=book_name, event_book_properties=_properties_connector)
         if not rtn_cls.book_pm.has_connector(cls.CONNECTOR_BOOK):
             rtn_cls.set_state_persist_contract(path=_path, location=_location, module_name=_module_name,
                                                handler=_handler_name, **kwargs)
@@ -74,23 +73,23 @@ class EventBook(object):
         return rtn_cls
 
     @classmethod
-    def from_path(cls, path: str=None, contract_name: str=None, **kwargs):
+    def from_path(cls, book_name: str=None, path: str=None, **kwargs):
         """ Class Factory Method that builds the connector handlers from the data paths.
         This assumes the use of the pandas handler module.
 
         :param path: the path persist path
-        :param contract_name: (optional) The reference name of the properties contract. Default 'primary_book'
+        :param book_name: (optional) The reference name of the event book. Default 'primary_book'
         :return: the initialised class instance
         """
-        _contract_name = contract_name if isinstance(contract_name, str) else 'primary_book'
-        _path = os.path.join(os.getcwd(), 'persist', _contract_name) if not isinstance(path, str) else path
+        _book_name = book_name if isinstance(book_name, str) else 'primary_book'
+        _path = os.path.join(os.getcwd(), 'persist', _book_name) if not isinstance(path, str) else path
         _module_name = 'ds_discovery.handlers.pandas_handlers'
         _handler_name = 'PandasPersistHandler'
-        _location = os.path.join(_path, _contract_name)
-        _properties_connector = ConnectorContract(resource="config_event_book_{}.yaml".format(_contract_name),
+        _location = os.path.join(_path, _book_name)
+        _properties_connector = ConnectorContract(resource="config_event_book_{}.yaml".format(_book_name),
                                                   connector_type='yaml', location=_location, module_name=_module_name,
                                                   handler=_handler_name)
-        rtn_cls = cls(contract_name=_contract_name, event_book_properties=_properties_connector)
+        rtn_cls = cls(book_name=_book_name, event_book_properties=_properties_connector)
         if not rtn_cls.book_pm.has_connector(cls.CONNECTOR_BOOK):
             rtn_cls.set_state_persist_contract(path=_path, location=_location, module_name=_module_name,
                                                handler=_handler_name, **kwargs)
@@ -100,21 +99,21 @@ class EventBook(object):
         return rtn_cls
 
     @classmethod
-    def from_env(cls, contract_name: str=None, **kwargs):
+    def from_env(cls, book_name: str=None, **kwargs):
         """ Class Factory Method that builds the connector handlers taking the property contract path from
         the os.environ['EVENT_BOOK_PATH'] or locally from the current working directory 'event_book/contracts' if
         no environment variable is found. This assumes the use of the pandas handler module and yaml persisted file.
 
-         :param contract_name: The reference name of the properties contract
+         :param book_name: The reference name of the event book
          :return: the initialised class instance
          """
         _path = os.environ['EVENT_BOOK_PATH'] if 'EVENT_BOOK_PATH' in os.environ.keys() else None
-        return cls.from_path(contract_name=contract_name, path=_path, **kwargs)
+        return cls.from_path(book_name=book_name, path=_path, **kwargs)
 
     @property
-    def contract_name(self) -> str:
+    def book_name(self) -> str:
         """The contract name of this transition instance"""
-        return self._contract_name
+        return self._book_name
 
     @property
     def version(self) -> str:
@@ -124,8 +123,8 @@ class EventBook(object):
     @property
     def book_pm(self) -> EventBookPropertyManager:
         """The data properties manager instance"""
-        if self._book_pm is None or self._book_pm.contract_name != self.contract_name:
-            self._book_pm = EventBookPropertyManager(self._contract_name)
+        if self._book_pm is None or self._book_pm.contract_name != self.book_name:
+            self._book_pm = EventBookPropertyManager(self._book_name)
         return self._book_pm
 
     @property
@@ -156,10 +155,10 @@ class EventBook(object):
         return _time
 
     def _update_counters(self):
-        self.__state_count += 1
+        self.__book_count += 1
         self.__event_count += 1
-        if 0 < self.book_pm.book_distance <= self.__state_count:
-            self.__state_count = 0
+        if 0 < self.book_pm.book_distance <= self.__book_count:
+            self.__book_count = 0
             self.persist_book()
             self.__events_log = dict()
             self._persist_events()
@@ -190,14 +189,14 @@ class EventBook(object):
         """ Returns a persist pattern based on time, contract name, the book and version"""
         _pattern = "{}_{}_{}_{}.pickle"
         _time = datetime.now().strftime('%Y%m%d%H%M%S%f')
-        return _pattern.format(str(datetime.now()), self.contract_name, label, self.version), 'pickle'
+        return _pattern.format(str(datetime.now()), self.book_name, label, self.version), 'pickle'
 
     def set_state_persist_contract(self, path: str=None, location: str=None, module_name: str=None,
                                    handler: str=None, **kwargs):
         """ Sets the persist contract. For parameters not provided the default resource name and data properties
         connector contract module and handler are used.
 
-        :param path: (optional) the path to the persist resources. default 'persist/{contract_name}/'
+        :param path: (optional) the path to the persist resources. default 'persist/{book_name}/'
         :param location: (optional) a path, region or uri reference that can be used to identify location of resource
         :param module_name: (optional) a module name with full package path e.g 'ds_discovery.handlers.pandas_handlers
         :param handler: (optional) the name of the Handler Class. Must be
@@ -212,7 +211,7 @@ class EventBook(object):
         """ Sets the persist contract. For parameters not provided the default resource name and data properties
         connector contract module and handler are used.
 
-        :param path: (optional) the path to the persist resources. default 'persist/{contract_name}/'
+        :param path: (optional) the path to the persist resources. default 'persist/{book_name}/'
         :param location: (optional) a path, region or uri reference that can be used to identify location of resource
         :param module_name: (optional) a module name with full package path e.g 'ds_discovery.handlers.pandas_handlers
         :param handler: (optional) the name of the Handler Class. Must be
@@ -228,7 +227,7 @@ class EventBook(object):
         connector contract module and handler are used.
 
         :param connector_name: the name of the connector for reference
-        :param path: (optional) the path to the persist resources. default 'persist/{contract_name}/'
+        :param path: (optional) the path to the persist resources. default 'persist/{book_name}/'
         :param location: (optional) a path, region or uri reference that can be used to identify location of resource
         :param module_name: (optional) a module name with full package path e.g 'ds_discovery.handlers.pandas_handlers
         :param handler: (optional) the name of the Handler Class. Must be
@@ -241,7 +240,7 @@ class EventBook(object):
                                                                                             connector_name))
         reference = connector_name if self.book_pm.has_connector(connector_name) else self.CONNECTOR_PROPERTIES
         label = 'book' if connector_name == self.CONNECTOR_BOOK else 'event'
-        path = os.path.join('persist', self.contract_name) if not isinstance(path, str) else path
+        path = os.path.join('persist', self.book_name) if not isinstance(path, str) else path
         name, connector_type = self.generate_resource_name(label=label)
         resource = os.path.join(path, name)
         if not isinstance(location, str):
