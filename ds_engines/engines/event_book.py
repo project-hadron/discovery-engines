@@ -31,7 +31,7 @@ class EventBook(object):
             raise ValueError("The contract name must be a valid string")
         self._book_name = book_name
         # set property managers
-        self._book_pm = EventBookPropertyManager.from_properties(book_name=self._book_name,
+        self._book_pm = EventBookPropertyManager.from_properties(contract_name=self._book_name,
                                                                  connector_contract=event_book_properties)
         self.CONNECTOR_PROPERTIES = self._book_pm.CONTRACT_CONNECTOR
         if self._book_pm.has_persisted_properties():
