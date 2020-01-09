@@ -29,12 +29,10 @@ class EventBookPropertyManager(AbstractPropertyManager):
         """
         replace = replace if isinstance(replace, bool) else False
         instance = cls(contract_name=contract_name)
-        instance.set_property_connector(resource=connector_contract.resource,
-                                        connector_type=connector_contract.connector_type,
-                                        location=connector_contract.location,
+        instance.set_property_connector(uri=connector_contract.uri,
                                         module_name=connector_contract.module_name,
                                         handler=connector_contract.handler, **connector_contract.kwargs)
-        if instance.get_connector_handler(instance.CONTRACT_CONNECTOR).exists():
+        if instance.get_connector_handler(instance.CONNECTOR_INTENT).exists():
             instance.load_properties(replace=replace)
         return instance
 
