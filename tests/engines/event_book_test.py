@@ -7,7 +7,7 @@ from pprint import pprint
 
 import pandas as pd
 
-from ds_engines.engines.event_book import EventBook
+from ds_engines.event_book.event_book_portfolio import EventBook
 from ds_behavioral import DataBuilderTools as tools
 
 
