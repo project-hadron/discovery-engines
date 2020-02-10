@@ -1,3 +1,4 @@
+from copy import deepcopy
 from datetime import datetime
 import pandas as pd
 
@@ -14,23 +15,27 @@ class EventBook(object):
     __book_count: int
     __last_book_time: datetime
 
-    def __init__(self, book_name: str, intent_params: dict, state_connector: ConnectorContract=None,
+    def __init__(self, book_name: str, distance_params: dict=None, state_connector: ConnectorContract=None,
                  events_log_connector: ConnectorContract=None):
         """ Encapsulation class for the management of Event Books
 
         :param book_name: The name of the event book
-        :param intent_params: the parameterised intent
+        :param distance_params: the parameterised intent for distances. Any set to zero means no persist
+                - time_distance: the time distance for persisting the state
+                - count_distance: the count distance for persisting the state (only if no time distance)
+                - events_log_distance: the log event distance. This is for percistence recovery.
         :param state_connector: The persist handler for the state book
         :param events_log_connector: The persist handler for the event log
         """
         if not isinstance(book_name, str) or len(book_name) < 1:
             raise ValueError("The contract name must be a valid string")
+        distance_params = distance_params if isinstance(distance_params, dict) else {}
         self._book_name = book_name
         self._state_connector = state_connector
         self._events_connector = events_log_connector
-        self._time_distance = intent_params.get("time_distance", 0)
-        self._count_distance = intent_params.get("count_distance", 0)
-        self._events_distance = intent_params.get("events_distance", 0)
+        self._time_distance = distance_params.get("time_distance", 0)
+        self._count_distance = distance_params.get("count_distance", 0)
+        self._events_log_distance = distance_params.get("events_log_distance", 0)
         # initialise the globals
         self.__book_state = pd.DataFrame()
         self.__events_log = dict()
@@ -44,19 +49,56 @@ class EventBook(object):
         return self._book_name
 
     @property
+    def count_distance(self) -> str:
+        """returns the current state count distance"""
+        return self._count_distance
+
+    @property
+    def time_distance(self) -> str:
+        """returns the current state time distance in seconds"""
+        return self._time_distance
+
+    @property
+    def events_log_distance(self) -> str:
+        """returns the current events log distance"""
+        return self._events_log_distance
+
+    @property
     def current_state(self) -> (datetime, pd.DataFrame):
         return datetime.now(), self.__book_state.copy(deep=True)
 
+    @property
+    def _current_events_log(self) -> dict:
+        return deepcopy(self.__events_log)
+
+    def set_count_distance(self, distance: int):
+        """sets the state count distance"""
+        if isinstance(distance, int):
+            self._count_distance = abs(distance)
+
+    def set_time_distance(self, distance: int):
+        """sets the state time distance as seconds"""
+        if isinstance(distance, int):
+            self._time_distance = abs(distance)
+
+    def set_events_log_distance(self, distance: int):
+        """sets the state events log distance. Note the events log should be less than the
+        state distance or it will never save. """
+        if isinstance(distance, int):
+            self._events_log_distance = abs(distance)
+
     def add_event(self, event: pd.DataFrame()) -> datetime:
         _time = datetime.now()
-        self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['add', event]})
+        if self.events_log_distance > 0:
+            self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['add', event]})
         self.__book_state = event.combine_first(self.__book_state)
         self._update_counters()
         return _time
 
     def increment_event(self, event: pd.DataFrame()) -> datetime:
         _time = datetime.now()
-        self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['increment', event]})
+        if self.events_log_distance > 0:
+            self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['increment', event]})
         _event = event.combine(self.__book_state, lambda s1, s2: s2 + s1 if len(s2.mode()) else s1)
         self.__book_state = _event.combine_first(self.__book_state)
         self._update_counters()
@@ -64,7 +106,8 @@ class EventBook(object):
 
     def decrement_event(self, event: pd.DataFrame()) -> datetime:
         _time = datetime.now()
-        self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['decrement', event]})
+        if self.events_log_distance > 0:
+            self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['decrement', event]})
         _event = event.combine(self.__book_state, lambda s1, s2: s2 - s1 if len(s2.mode()) else s1)
         self.__book_state = _event.combine_first(self.__book_state)
         self._update_counters()
@@ -72,7 +115,7 @@ class EventBook(object):
 
     def _update_counters(self):
         self.__book_count += 1 if self._count_distance > 0 else 0
-        self.__event_count += 1 if self._events_distance > 0 else 0
+        self.__event_count += 1 if self._events_log_distance > 0 else 0
         book_update = False
         if 0 < self._time_distance <= (datetime.now() - self.__last_book_time).total_seconds():
             self.__last_book_time = datetime.now()
@@ -84,13 +127,14 @@ class EventBook(object):
             self.persist_book()
             self._persist_events()
             self.__events_log = dict()
-        if 0 < self._events_distance <= self.__event_count:
+            self.__event_count = 0
+        if 0 < self._events_log_distance <= self.__event_count:
             self.__event_count = 0
             self._persist_events()
             self.__events_log = dict()
         return
 
-    def persist_book(self, stamp_uri: str=None, ignore_kwargs: bool=False):
+    def persist_book(self, **kwargs):
         """ persists the event book state with an alternative to save off a stamped copy to a provided URI
 
         :param stamp_uri: in addition to persisting the event book, save to this uri
@@ -100,9 +144,21 @@ class EventBook(object):
         if isinstance(self._state_connector, ConnectorContract):
             _current_state = self.current_state[1]
             handler = HandlerFactory.instantiate(self._state_connector)
-            handler.persist_canonical(_current_state)
+            handler.persist_canonical(_current_state, **kwargs)
+        return
+
+    def persist_backup_book(self, stamp_uri: str=None, **kwargs):
+        """ persists the event book state with an alternative to save off a stamped copy to a provided URI
+
+        :param stamp_uri: in addition to persisting the event book, save to this uri
+        :param ignore_kwargs: if the ConnectContract kwargs should be ignored and the query value pairs used
+        :return:
+        """
+        if isinstance(self._state_connector, ConnectorContract):
+            _current_state = self.current_state[1]
+            handler = HandlerFactory.instantiate(self._state_connector)
             if isinstance(stamp_uri, str):
-                handler.backup_canonical(canonical=_current_state, uri=stamp_uri, ignore_kwargs=ignore_kwargs)
+                handler.backup_canonical(canonical=_current_state, uri=stamp_uri, **kwargs)
         return
 
     def _persist_events(self):

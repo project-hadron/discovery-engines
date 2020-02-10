@@ -33,7 +33,7 @@ class EventBookIntentModel(AbstractIntentModel):
             events_log_connector = intent_params.pop('events_log_connector', None)
             if isinstance(events_log_connector, str) and self._pm.has_connector(connector_name=events_log_connector):
                 events_log_connector = self._pm.get_connector_contract(connector_name=events_log_connector)
-            book_portfolio[event_book] = EventBook(book_name=event_book, intent_params=intent_params,
+            book_portfolio[event_book] = EventBook(book_name=event_book, distance_params=intent_params,
                                                    state_connector= state_connector,
                                                    events_log_connector=events_log_connector)
         return book_portfolio
