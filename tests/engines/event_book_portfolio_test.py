@@ -1,14 +1,9 @@
-import concurrent.futures
 import os
 import shutil
 import unittest
 
-import pandas as pd
 
-from ds_engines.event_book.event_book_portfolio import EventBook
-
-
-class MyTestCase(unittest.TestCase):
+class EventBookPortfolioTest(unittest.TestCase):
 
     def setUp(self):
         os.environ['AISTAC_EB_URI'] = os.path.join(os.environ['PWD'], 'work')

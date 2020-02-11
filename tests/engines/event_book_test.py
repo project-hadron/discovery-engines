@@ -3,10 +3,10 @@ import unittest
 import os
 import pandas as pd
 from ds_foundation.handlers.abstract_handlers import ConnectorContract
-from ds_engines.event_book.event_book_portfolio import EventBook
+from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 
 
-class StateEngineTest(unittest.TestCase):
+class EventBookTest(unittest.TestCase):
 
     MODULE = "ds_foundation.handlers.python_handlers"
     HANDLER = "PythonPersistHandler"
@@ -27,10 +27,10 @@ class StateEngineTest(unittest.TestCase):
 
     def test_runs(self):
         """Basic smoke test"""
-        EventBook(book_name='test')
+        PandasEventBook(book_name='test')
 
     def test_events(self):
-        event_book = EventBook('test')
+        event_book = PandasEventBook('test')
         selection = list("ABCD")
         master = pd.DataFrame(columns=selection)
         event_book.add_event(event=master)
@@ -50,11 +50,11 @@ class StateEngineTest(unittest.TestCase):
         self.assertCountEqual(control, result)
 
     def test_parameters(self):
-        event_book = EventBook('test')
+        event_book = PandasEventBook('test')
         self.assertEqual(0, event_book.time_distance)
         self.assertEqual(0, event_book.count_distance)
         self.assertEqual(0, event_book.events_log_distance)
-        event_book = EventBook('test', distance_params={"time_distance": 1, "count_distance": 2, "events_log_distance": 3})
+        event_book = PandasEventBook('test', time_distance=1, count_distance=2, events_log_distance=3)
         self.assertEqual(1, event_book.time_distance)
         self.assertEqual(2, event_book.count_distance)
         self.assertEqual(3, event_book.events_log_distance)
@@ -70,7 +70,7 @@ class StateEngineTest(unittest.TestCase):
         events_uri = os.path.join(os.environ['AISTAC_PM_PATH'], 'events_log.pickle')
         state_connector = ConnectorContract(uri=state_uri, module_name=self.MODULE, handler=self.HANDLER)
         events_connector = ConnectorContract(uri=events_uri, module_name=self.MODULE, handler=self.HANDLER)
-        engine = EventBook('test', state_connector=state_connector, events_log_connector=events_connector)
+        engine = PandasEventBook('test', state_connector=state_connector, events_log_connector=events_connector)
         self.assertEqual(False, os.path.exists(state_uri))
         self.assertEqual(False, os.path.exists(events_uri))
         for i in range(10):

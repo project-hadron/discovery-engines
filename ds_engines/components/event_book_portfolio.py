@@ -1,11 +1,9 @@
 from datetime import datetime
-
+from typing import Any
 import pandas as pd
-from ds_engines.event_book.event_book import EventBook
-
 from ds_foundation.components.abstract_component import AbstractComponent
+from ds_foundation.handlers.abstract_event_book import AbstractEventBook
 from ds_foundation.handlers.abstract_handlers import ConnectorContract
-
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 from ds_engines.intent.event_book_intent_model import EventBookIntentModel
 
@@ -13,9 +11,6 @@ __author__ = 'Darryl Oatridge'
 
 
 class EventBookPortfolio(AbstractComponent):
-
-    CONNECTOR_BOOK = 'book'
-    CONNECTOR_EVENTS = 'events'
 
     __book_portfolio = dict()
 
@@ -27,7 +22,6 @@ class EventBookPortfolio(AbstractComponent):
                         if False: The connector contracts are kept in memory (useful for restricted file systems)
         """
         _intent_model = EventBookIntentModel(property_manager=property_manager)
-
         super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save)
 
     @classmethod
@@ -55,6 +49,7 @@ class EventBookPortfolio(AbstractComponent):
 
     @property
     def portfolio(self):
+        """returns a list of portfolio event names"""
         return list(self.__book_portfolio.keys())
 
     def update_portfolio(self, run_book: [str, list]=None):
@@ -67,47 +62,43 @@ class EventBookPortfolio(AbstractComponent):
         self.__book_portfolio.update(self.intent_model.run_intent_pipeline(run_book=run_book))
 
     def is_event_book(self, book_name: str) -> bool:
-        if book_name in self.__book_portfolio.keys() and isinstance(self.__book_portfolio.get(book_name), EventBook):
+        """Tests if an event book exists and if it is of type AbstractEventBook"""
+        if book_name in self.__book_portfolio.keys() and isinstance(self.__book_portfolio.get(book_name),
+                                                                    AbstractEventBook):
             return True
         return False
 
-    def get_event_book(self, book_name: str) -> EventBook:
+    def get_event_book(self, book_name: str):
+        """retrieves an event book instance from the portfolio by name"""
         if not self.is_event_book(book_name=book_name):
             raise ValueError("The event book instance '{}' can't be found in the portfolio.".format(book_name))
         return self.__book_portfolio.get(book_name)
 
-    def set_event_book(self, book_name: str, time_distance: int=None, events_distance: int=None,
-                       count_distance: int=None, state_connector: ConnectorContract=None,
-                       events_log_connector: ConnectorContract=None):
-        """sets the event book as an intent, setting the connectors if given
+    def set_event_book_connectors(self, book_name: str, state_connector: ConnectorContract,
+                                  events_log_connector: ConnectorContract):
+        """sets a pair of connectors for the state and event log. The connectors will have the name of the book
+        with a events log connector having a suffix of '_log'
 
         :param book_name: the unique name of the event book
-        :param time_distance: (optional) a time distance to persist the event book state
-        :param count_distance: (optional) an event count distance to persist the event book state
-        :param events_distance: (optional) an event distance to record the events log
-        :param state_connector: (optional) the state connector contract
+        :param state_connector: the state connector contract
         :param events_log_connector: (optional) the events log connector contract
         """
-        state_name = "_".join(["state", book_name])
-        events_log_name = "_".join(["events_log", book_name])
+        state_name = book_name
+        events_log_name = "_".join([book_name, '_log'])
         if isinstance(state_connector, ConnectorContract):
             if self.has_connector_contract(state_name):
                 self.remove_connector_contract(connector_name=state_name)
             self.set_connector_contract(connector_name=state_name, connector_contract=state_connector)
-        if isinstance(state_connector, ConnectorContract):
+        if isinstance(events_log_connector, ConnectorContract):
             if self.has_connector_contract(events_log_name):
                 self.remove_connector_contract(connector_name=events_log_name)
             self.set_connector_contract(connector_name=events_log_name, connector_contract=events_log_connector)
-        # set the intent
-        self.intent_model.set_event_book(book_name=book_name, time_distance=time_distance,
-                                         events_distance=events_distance,count_distance=count_distance,
-                                         state_connector=state_name, events_log_connector=events_log_name)
         return
 
     def remove_event_book(self, book_name: str):
         """removes the event book"""
-        state_name = "_".join(["state", book_name])
-        events_log_name = "_".join(["events_log", book_name])
+        state_name = book_name
+        events_log_name = "_".join([book_name, '_log'])
         # remove the connectors
         if self.has_connector_contract(state_name):
             self.remove_connector_contract(state_name)
@@ -122,17 +113,17 @@ class EventBookPortfolio(AbstractComponent):
             self.__book_portfolio.pop(book_name)
         return False
 
-    def current_state(self, book_name: str) -> (datetime, pd.DataFrame):
+    def current_state(self, book_name: str) -> (datetime, Any):
         event_book = self.get_event_book(book_name=book_name)
         return event_book.current_state
 
-    def add_event(self, book_name: str, event: pd.DataFrame):
+    def add_event(self, book_name: str, event: Any):
         return self.get_event_book(book_name=book_name).add_event(event=event)
 
-    def increment_event(self, book_name: str, event: pd.DataFrame):
+    def increment_event(self, book_name: str, event: Any):
         return self.get_event_book(book_name=book_name).increment_event(event=event)
 
-    def decrement_event(self, book_name: str, event: pd.DataFrame):
+    def decrement_event(self, book_name: str, event: Any):
         return self.get_event_book(book_name=book_name).decrement_event(event=event)
 
     def report_connectors(self, connector_filter: [str, list]=None, stylise: bool=True):

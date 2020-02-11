@@ -1,13 +1,13 @@
 from copy import deepcopy
 from datetime import datetime
 import pandas as pd
-
 from ds_foundation.handlers.abstract_handlers import ConnectorContract, HandlerFactory
+from ds_engines.engines.event_books.abstract_event_book import AbstractEventBook
 
 __author__ = 'Darryl Oatridge'
 
 
-class EventBook(object):
+class PandasEventBook(AbstractEventBook):
 
     __book_state: pd.DataFrame
     __events_log: dict
@@ -15,27 +15,26 @@ class EventBook(object):
     __book_count: int
     __last_book_time: datetime
 
-    def __init__(self, book_name: str, distance_params: dict=None, state_connector: ConnectorContract=None,
-                 events_log_connector: ConnectorContract=None):
+    def __init__(self, book_name: str, time_distance: int=None, count_distance: int=None, events_log_distance: int=None,
+                 state_connector: ConnectorContract=None, events_log_connector: ConnectorContract=None):
         """ Encapsulation class for the management of Event Books
 
         :param book_name: The name of the event book
-        :param distance_params: the parameterised intent for distances. Any set to zero means no persist
-                - time_distance: the time distance for persisting the state
-                - count_distance: the count distance for persisting the state (only if no time distance)
-                - events_log_distance: the log event distance. This is for percistence recovery.
+        :param time_distance: the time distance for persisting the state
+        :param count_distance: the count distance for persisting the state (only if no time distance)
+        :param events_log_distance: the log event distance. This is for percistence recovery.
         :param state_connector: The persist handler for the state book
         :param events_log_connector: The persist handler for the event log
         """
         if not isinstance(book_name, str) or len(book_name) < 1:
             raise ValueError("The contract name must be a valid string")
-        distance_params = distance_params if isinstance(distance_params, dict) else {}
+        super().__init__(book_name=book_name)
         self._book_name = book_name
         self._state_connector = state_connector
         self._events_connector = events_log_connector
-        self._time_distance = distance_params.get("time_distance", 0)
-        self._count_distance = distance_params.get("count_distance", 0)
-        self._events_log_distance = distance_params.get("events_log_distance", 0)
+        self._time_distance = time_distance if isinstance(time_distance, int) else 0
+        self._count_distance = count_distance if isinstance(count_distance, int) else 0
+        self._events_log_distance = events_log_distance if isinstance(events_log_distance, int) else 0
         # initialise the globals
         self.__book_state = pd.DataFrame()
         self.__events_log = dict()
@@ -44,24 +43,31 @@ class EventBook(object):
         self.__last_book_time = datetime.now()
 
     @property
-    def book_name(self) -> str:
-        """The contract name of this transition instance"""
-        return self._book_name
-
-    @property
-    def count_distance(self) -> str:
+    def count_distance(self) -> int:
         """returns the current state count distance"""
         return self._count_distance
 
     @property
-    def time_distance(self) -> str:
+    def time_distance(self) -> int:
         """returns the current state time distance in seconds"""
         return self._time_distance
 
     @property
-    def events_log_distance(self) -> str:
+    def events_log_distance(self) -> int:
         """returns the current events log distance"""
         return self._events_log_distance
+
+    def set_count_distance(self, distance: int):
+        """sets the state count distance"""
+        self._count_distance = distance
+
+    def set_time_distance(self, distance: int):
+        """sets the state time distance as seconds"""
+        self._time_distance = distance
+
+    def set_events_log_distance(self, distance: int):
+        """sets the state events log distance."""
+        self._events_log_distance = distance
 
     @property
     def current_state(self) -> (datetime, pd.DataFrame):
@@ -70,22 +76,6 @@ class EventBook(object):
     @property
     def _current_events_log(self) -> dict:
         return deepcopy(self.__events_log)
-
-    def set_count_distance(self, distance: int):
-        """sets the state count distance"""
-        if isinstance(distance, int):
-            self._count_distance = abs(distance)
-
-    def set_time_distance(self, distance: int):
-        """sets the state time distance as seconds"""
-        if isinstance(distance, int):
-            self._time_distance = abs(distance)
-
-    def set_events_log_distance(self, distance: int):
-        """sets the state events log distance. Note the events log should be less than the
-        state distance or it will never save. """
-        if isinstance(distance, int):
-            self._events_log_distance = abs(distance)
 
     def add_event(self, event: pd.DataFrame()) -> datetime:
         _time = datetime.now()

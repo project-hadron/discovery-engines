@@ -1,4 +1,3 @@
-from ds_foundation.handlers.abstract_handlers import ConnectorContract
 from ds_foundation.properties.abstract_properties import AbstractPropertyManager
 
 __author__ = 'Darryl Oatridge'

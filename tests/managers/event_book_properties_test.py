@@ -2,10 +2,16 @@ import unittest
 import os
 import shutil
 
+from ds_foundation.properties.property_manager import PropertyManager
+
+from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
+
+
 class EventBookPropertiesTest(unittest.TestCase):
 
     def setUp(self):
         os.environ['AISTAC_EB_URI'] = os.path.join(os.environ['PWD'], 'work')
+        PropertyManager._remove_all()
         pass
 
     def tearDown(self):
@@ -16,10 +22,8 @@ class EventBookPropertiesTest(unittest.TestCase):
 
     def test_runs(self):
         """Basic smoke test"""
-        pass
+        EventBookPropertyManager('test')
 
-    def test_something(self):
-        self.assertEqual(True, False)
 
 
 if __name__ == '__main__':

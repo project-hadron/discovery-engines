@@ -34,7 +34,7 @@ def find_version(*file_paths):
 
 
 setup(
-    name='discovery-event_book',
+    name='discovery-event_books',
     version=find_version('ds_engines', '__init__.py'),
     description='Discovery Engines',
     long_description=read('README.rst'),
