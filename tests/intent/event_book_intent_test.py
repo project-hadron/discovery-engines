@@ -30,9 +30,24 @@ class EventBookIntentModelTest(unittest.TestCase):
     def test_set_event_book(self):
         im = EventBookIntentModel(self.pm)
         im.set_event_book(book_name='book_one')
-        im.set_event_book(book_name='book_two', count_distance=2)
+        im.set_event_book(book_name='book_two', count_distance=2, module_name='some.name', event_book_cls='MyEvents')
         result = self.pm.get_intent()
-        print(result)
+        control = {'0': {'book_one': {'kwargs': {}},
+                         'book_two': {'module_name': 'some.name', 'event_book_cls': 'MyEvents', 'kwargs': {'count_distance': 2}}}}
+        self.assertDictEqual(control, result)
+
+    def test_run_intent_pipeline(self):
+        im = EventBookIntentModel(self.pm)
+        im.set_event_book(book_name='book_one')
+        im.set_event_book(book_name='book_two', count_distance=2)
+        result = im.run_intent_pipeline()
+        self.assertCountEqual(['book_one', 'book_two'], result.keys())
+        self.assertEqual('book_one', result.get('book_one').book_name)
+        im.set_event_book(book_name='book_three', module_name='ds_engines.engines.event_books.pandas_event_book',
+                          event_book_cls='PandasEventBook', intent_level=1)
+        result = im.run_intent_pipeline(run_book=1)
+        self.assertCountEqual(['book_three'], result.keys())
+        self.assertEqual('book_three', result.get('book_three').book_name)
 
 
 

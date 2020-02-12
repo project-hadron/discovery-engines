@@ -52,14 +52,38 @@ class EventBookPortfolio(AbstractComponent):
         """returns a list of portfolio event names"""
         return list(self.__book_portfolio.keys())
 
+    def set_event_book(self, book_name: str, module_name: str=None, event_book_cls: str=None,
+                       create_book: bool=None, intent_level: [int, str]=None, **kwargs):
+        """ sets an event book as a parameterised intent
+
+        :param book_name: the unique reference name for the event book
+        :param module_name: (optional) a package path for an Event Book class
+        :param event_book_cls: (optional) a concrete implmentation of the AbstractEventBook
+        :param create_book: (optiona) if an instance of the Evetn Book should be created and added to the portfolio.
+        :param intent_level: (optional) an intent level to put the parameterised intent
+        :param kwargs: any kwargs to be pass as part of the parameterised intent
+        """
+        if not isinstance(book_name, str) or len(book_name) == 0:
+            raise ValueError("The book_name must be a valid string")
+        if self.is_event_book(book_name=book_name):
+            raise KeyError(f"The book name '{book_name}' already exists in the portfolio")
+        result = self.intent_model.set_event_book(book_name=book_name, save_intent=True, create_book=create_book,
+                                                  module_name=module_name, event_book_cls=event_book_cls,
+                                                  intent_level=intent_level, replace_intent=True, **kwargs)
+        if isinstance(result, AbstractEventBook):
+            self.__book_portfolio.update({book_name: result})
+        return
+
     def update_portfolio(self, run_book: [str, list]=None):
-        """runs the intent pipeline to create the portfolio. Optionally a list of Intent level profolios can
-         be passed to selectively run certain event books"""
+        """runs the intent pipeline to create the portfolio. Optionally a list of Intent levels can
+         be passed to selectively run certain event books. If an event book already exists it won't be replaced.
+         To remove an evetn book, explicitely 'remove_event_book(...)'"""
         if isinstance(run_book, (str, list)):
             run_book = self.pm.list_formatter(run_book)
         else:
             run_book = None
-        self.__book_portfolio.update(self.intent_model.run_intent_pipeline(run_book=run_book))
+        self.__book_portfolio.update(self.intent_model.run_intent_pipeline(run_book=run_book, exclude=self.portfolio))
+        return
 
     def is_event_book(self, book_name: str) -> bool:
         """Tests if an event book exists and if it is of type AbstractEventBook"""
@@ -71,7 +95,7 @@ class EventBookPortfolio(AbstractComponent):
     def get_event_book(self, book_name: str):
         """retrieves an event book instance from the portfolio by name"""
         if not self.is_event_book(book_name=book_name):
-            raise ValueError("The event book instance '{}' can't be found in the portfolio.".format(book_name))
+            raise ValueError(f"The event book instance '{book_name}' can't be found in the portfolio.")
         return self.__book_portfolio.get(book_name)
 
     def set_event_book_connectors(self, book_name: str, state_connector: ConnectorContract,
@@ -105,8 +129,7 @@ class EventBookPortfolio(AbstractComponent):
         if self.has_connector_contract(events_log_name):
             self.remove_connector_contract(events_log_name)
         # remove the intent
-        if self.has_intent(book_name):
-            self.remove_intent(book_name)
+        self.pm.remove_intent(intent_param=book_name)
         # remove the portfolio entry
         self.__book_portfolio.pop(book_name)
         if book_name in self.__book_portfolio.keys():

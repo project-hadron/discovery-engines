@@ -1,8 +1,8 @@
 from copy import deepcopy
 from datetime import datetime
 import pandas as pd
+from ds_foundation.handlers.abstract_event_book import AbstractEventBook
 from ds_foundation.handlers.abstract_handlers import ConnectorContract, HandlerFactory
-from ds_engines.engines.event_books.abstract_event_book import AbstractEventBook
 
 __author__ = 'Darryl Oatridge'
 
@@ -125,12 +125,7 @@ class PandasEventBook(AbstractEventBook):
         return
 
     def persist_book(self, **kwargs):
-        """ persists the event book state with an alternative to save off a stamped copy to a provided URI
-
-        :param stamp_uri: in addition to persisting the event book, save to this uri
-        :param ignore_kwargs: if the ConnectContract kwargs should be ignored and the query value pairs used
-        :return:
-        """
+        """ persists the event book state """
         if isinstance(self._state_connector, ConnectorContract):
             _current_state = self.current_state[1]
             handler = HandlerFactory.instantiate(self._state_connector)
@@ -141,7 +136,6 @@ class PandasEventBook(AbstractEventBook):
         """ persists the event book state with an alternative to save off a stamped copy to a provided URI
 
         :param stamp_uri: in addition to persisting the event book, save to this uri
-        :param ignore_kwargs: if the ConnectContract kwargs should be ignored and the query value pairs used
         :return:
         """
         if isinstance(self._state_connector, ConnectorContract):
