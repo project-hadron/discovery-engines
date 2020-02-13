@@ -74,10 +74,10 @@ class EventBookPortfolio(AbstractComponent):
             self.__book_portfolio.update({book_name: result})
         return
 
-    def update_portfolio(self, run_book: [str, list]=None):
-        """runs the intent pipeline to create the portfolio. Optionally a list of Intent levels can
+    def start_event_books(self, run_book: [str, list]=None):
+        """runs the intent pipeline to create the portfolio. Optionally a list of Event Books can
          be passed to selectively run certain event books. If an event book already exists it won't be replaced.
-         To remove an evetn book, explicitely 'remove_event_book(...)'"""
+         To remove an event book, explicitly 'remove_event_book(...)'"""
         if isinstance(run_book, (str, list)):
             run_book = self.pm.list_formatter(run_book)
         else:
@@ -213,7 +213,7 @@ class EventBookPortfolio(AbstractComponent):
         style = [{'selector': 'th', 'props': [('font-size', "120%"), ("text-align", "center")]},
                  {'selector': '.row_heading, .blank', 'props': [('display', 'none;')]}]
         df = pd.DataFrame.from_dict(data=self.pm.report_intent(), orient='columns')
-        df['running'] = df['intent'].isin(list(self.__book_portfolio.keys()))
+        df['active'] = df['intent'].isin(list(self.__book_portfolio.keys()))
         if stylise:
             index = df[df['level'].duplicated()].index.to_list()
             df.loc[index, 'level'] = ''

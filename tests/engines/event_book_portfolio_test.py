@@ -33,7 +33,7 @@ class EventBookPortfolioTest(unittest.TestCase):
         engine.add_event_book(book_name='book_two', distance=5)
         self.assertEqual(['book_one'], engine.portfolio)
         print(engine.report_intent(stylise=False))
-        engine.update_portfolio()
+        engine.start_event_books()
         self.assertEqual(['book_one', 'book_two'], engine.portfolio)
         engine.remove_event_book(book_name='book_one')
         self.assertEqual(['book_two'], engine.portfolio)

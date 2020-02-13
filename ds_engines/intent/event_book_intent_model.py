@@ -13,7 +13,7 @@ class EventBookIntentModel(AbstractIntentModel):
         # set all the defaults
         default_save_intent = default_save_intent if isinstance(default_save_intent, bool) else True
         default_replace_intent = True
-        default_intent_level = 0
+        default_intent_level = 'primary'
         intent_param_exclude = ['start_book', 'book_name']
         super().__init__(property_manager=property_manager, intent_param_exclude=intent_param_exclude,
                          default_save_intent=default_save_intent, default_intent_level=default_intent_level,
