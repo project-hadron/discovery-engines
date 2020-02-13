@@ -2,6 +2,8 @@ import os
 import shutil
 import unittest
 
+import pandas as pd
+
 from ds_foundation.handlers.abstract_handlers import ConnectorContract
 
 from ds_engines.components.event_book_portfolio import EventBookPortfolio
@@ -38,6 +40,16 @@ class EventBookPortfolioTest(unittest.TestCase):
         engine.remove_event_book(book_name='book_one')
         self.assertEqual(['book_two'], engine.portfolio)
         self.assertEqual(['book_two'], list(engine.pm.get_intent().get('0').keys()))
+
+    def test_state_persist(self):
+        engine = EventBookPortfolio.from_env('task')
+        state_connector = ConnectorContract(uri=engine.pm.file_pattern('persist_book_state'),
+                                            module_name=engine.PYTHON_MODULE_NAME,
+                                            handler=engine.PYTHON_HANDLER)
+
+        engine.add_event_book_connectors('persist_book_state', state_connector=state_connector)
+        engine.add_event_book('persist_book', state_connector='persist_book_state', count_distance=1, start_book=True)
+        engine.increment_event('persist_book', pd.DataFrame.from_dict(data={'A': [1,2,3], 'B': [3,4,5]}))
 
 
 if __name__ == '__main__':

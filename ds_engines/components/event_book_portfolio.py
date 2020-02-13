@@ -99,7 +99,7 @@ class EventBookPortfolio(AbstractComponent):
             raise ValueError(f"The event book instance '{book_name}' can't be found in the portfolio.")
         return self.__book_portfolio.get(book_name)
 
-    def set_event_book_connectors(self, book_name: str, state_connector: ConnectorContract,
+    def add_event_book_connectors(self, book_name: str, state_connector: ConnectorContract,
                                   events_log_connector: ConnectorContract=None):
         """sets a pair of connectors for the state and event log. The connectors will have the name of the book
         with a events log connector having a suffix of '_log'
@@ -215,7 +215,7 @@ class EventBookPortfolio(AbstractComponent):
         df = pd.DataFrame.from_dict(data=self.pm.report_intent(), orient='columns')
         df['active'] = df['intent'].isin(list(self.__book_portfolio.keys()))
         if stylise:
-            index = df[df['level'].duplicated()].index.to_list()
+            index = df[df['level', 'active'].duplicated()].index.to_list()
             df.loc[index, 'level'] = ''
             df = df.reset_index(drop=True)
             df_style = df.style.set_table_styles(style).set_properties(**{'text-align': 'left'})
