@@ -28,10 +28,11 @@ class EventBookPortfolioTest(unittest.TestCase):
 
     def test_portfolio(self):
         engine = EventBookPortfolio.from_env('task')
-        engine.set_event_book(book_name='book_one', create_book=True)
+        engine.add_event_book(book_name='book_one', start_book=True)
         self.assertEqual(['book_one'], engine.portfolio)
-        engine.set_event_book(book_name='book_two')
+        engine.add_event_book(book_name='book_two', distance=5)
         self.assertEqual(['book_one'], engine.portfolio)
+        print(engine.report_intent(stylise=False))
         engine.update_portfolio()
         self.assertEqual(['book_one', 'book_two'], engine.portfolio)
         engine.remove_event_book(book_name='book_one')
