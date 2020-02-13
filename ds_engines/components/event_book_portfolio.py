@@ -215,7 +215,7 @@ class EventBookPortfolio(AbstractComponent):
         df = pd.DataFrame.from_dict(data=self.pm.report_intent(), orient='columns')
         df['active'] = df['intent'].isin(list(self.__book_portfolio.keys()))
         if stylise:
-            index = df[df['level', 'active'].duplicated()].index.to_list()
+            index = df[df['level'].duplicated()].index.to_list()
             df.loc[index, 'level'] = ''
             df = df.reset_index(drop=True)
             df_style = df.style.set_table_styles(style).set_properties(**{'text-align': 'left'})
