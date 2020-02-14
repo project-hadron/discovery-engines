@@ -99,6 +99,14 @@ class EventBookPortfolio(AbstractComponent):
             raise ValueError(f"The event book instance '{book_name}' can't be found in the portfolio.")
         return self.__book_portfolio.get(book_name)
 
+    def get_event_book_connectors(self, connector_name: str) -> ConnectorContract:
+        """ retrieves a named event book connector
+
+        :param connector_name: the unique name of the connector contract
+        :return: ConnectorContract
+        """
+        return self.pm.get_connector_contract(connector_name=connector_name)
+
     def add_event_book_connectors(self, book_name: str, state_connector: ConnectorContract,
                                   events_log_connector: ConnectorContract=None):
         """sets a pair of connectors for the state and event log. The connectors will have the name of the book
@@ -111,13 +119,13 @@ class EventBookPortfolio(AbstractComponent):
         state_name = book_name
         events_log_name = "_".join([book_name, '_log'])
         if isinstance(state_connector, ConnectorContract):
-            if self.has_connector_contract(state_name):
+            if self.pm.has_connector(state_name):
                 self.remove_connector_contract(connector_name=state_name)
-            self.set_connector_contract(connector_name=state_name, connector_contract=state_connector)
+            self.add_connector_contract(connector_name=state_name, connector_contract=state_connector)
         if isinstance(events_log_connector, ConnectorContract):
-            if self.has_connector_contract(events_log_name):
+            if self.pm.has_connector(events_log_name):
                 self.remove_connector_contract(connector_name=events_log_name)
-            self.set_connector_contract(connector_name=events_log_name, connector_contract=events_log_connector)
+            self.pm.set_connector_contract(connector_name=events_log_name, connector_contract=events_log_connector)
         return
 
     def stop_event_books(self, book_names: [str, list]):
@@ -141,9 +149,9 @@ class EventBookPortfolio(AbstractComponent):
             state_name = book
             events_log_name = "_".join([book, '_log'])
             # remove the connectors
-            if self.has_connector_contract(state_name):
+            if self.pm.has_connector(state_name):
                 self.remove_connector_contract(state_name)
-            if self.has_connector_contract(events_log_name):
+            if self.pm.has_connector(events_log_name):
                 self.remove_connector_contract(events_log_name)
             # remove the intent
             self.pm.remove_intent(intent_param=book)
