@@ -14,14 +14,17 @@ class EventBookPortfolio(AbstractComponent):
 
     __book_portfolio = dict()
 
-    def __init__(self, property_manager: EventBookPropertyManager, default_save=None):
+    def __init__(self, property_manager: EventBookPropertyManager, default_save=None, default_save_intent: bool=None,
+                 intent_type_additions: list=None):
         """ Encapsulation class for the discovery set of classes
 
         :param property_manager: The contract property manager instance for this component
-        :param default_save: The default behaviour of persisting the contracts:
+        :param default_save: (optional) The default behaviour of persisting the contracts:
                         if False: The connector contracts are kept in memory (useful for restricted file systems)
+        :param intent_type_additions: (optional) if the intent has additional data_types passed as parameters
         """
-        _intent_model = EventBookIntentModel(property_manager=property_manager)
+        _intent_model = EventBookIntentModel(property_manager=property_manager, default_save_intent=default_save_intent,
+                                             intent_type_additions=intent_type_additions)
         super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save)
 
     @classmethod

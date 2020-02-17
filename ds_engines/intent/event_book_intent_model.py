@@ -9,15 +9,23 @@ __author__ = 'Darryl Oatridge'
 
 class EventBookIntentModel(AbstractIntentModel):
 
-    def __init__(self, property_manager: AbstractPropertyManager, default_save_intent: bool=None):
+    def __init__(self, property_manager: AbstractPropertyManager, default_save_intent: bool=None,
+                 intent_type_additions: list=None):
+        """initialisation of the Intent class.
+
+        :param property_manager: the property manager class that references the intent contract.
+        :param default_save_intent: (optional) The default action for saving intent in the property manager
+        :param intent_type_additions: (optional) if additional data types need to be supported as an intent param
+        """
         # set all the defaults
         default_save_intent = default_save_intent if isinstance(default_save_intent, bool) else True
+        intent_type_additions = intent_type_additions if isinstance(intent_type_additions, list) else list()
         default_replace_intent = True
         default_intent_level = 'primary'
         intent_param_exclude = ['start_book', 'book_name']
         super().__init__(property_manager=property_manager, intent_param_exclude=intent_param_exclude,
                          default_save_intent=default_save_intent, default_intent_level=default_intent_level,
-                         default_replace_intent=default_replace_intent)
+                         default_replace_intent=default_replace_intent, intent_type_additions=intent_type_additions)
 
     def run_intent_pipeline(self, run_book: [str, int, list]=None, exclude: list=None, **kwargs) -> dict:
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
