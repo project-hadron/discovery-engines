@@ -1,8 +1,8 @@
 import inspect
-from ds_foundation.handlers.abstract_event_book import EventBookContract, EventBookFactory
+from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory
 from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
-from ds_foundation.intent.abstract_intent import AbstractIntentModel
-from ds_foundation.properties.abstract_properties import AbstractPropertyManager
+from aistac.intent.abstract_intent import AbstractIntentModel
+from aistac.properties.abstract_properties import AbstractPropertyManager
 
 __author__ = 'Darryl Oatridge'
 

@@ -1,4 +1,4 @@
-from ds_foundation.properties.abstract_properties import AbstractPropertyManager
+from aistac.properties.abstract_properties import AbstractPropertyManager
 
 __author__ = 'Darryl Oatridge'
 

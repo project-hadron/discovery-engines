@@ -1,9 +1,9 @@
 from datetime import datetime
 from typing import Any
 import pandas as pd
-from ds_foundation.components.abstract_component import AbstractComponent
-from ds_foundation.handlers.abstract_event_book import AbstractEventBook
-from ds_foundation.handlers.abstract_handlers import ConnectorContract
+from aistac.components.abstract_component import AbstractComponent
+from aistac.handlers.abstract_event_book import AbstractEventBook
+from aistac.handlers.abstract_handlers import ConnectorContract
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 from ds_engines.intent.event_book_intent_model import EventBookIntentModel
 
