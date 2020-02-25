@@ -25,10 +25,7 @@ class EventBookPortfolio(AbstractComponent):
         """
         _intent_model = EventBookIntentModel(property_manager=property_manager, default_save_intent=default_save_intent,
                                              intent_type_additions=intent_type_additions)
-        super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save,
-                         default_module='aistac.handlers.python_handlers',
-                         default_source_handler='PythonSourceHandler',
-                         default_persist_handler='PythonPersistHandler')
+        super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save)
 
     @classmethod
     def from_uri(cls, task_name: str, uri_pm_path: str, pm_file_type: str = None, pm_module: str = None,
