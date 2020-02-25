@@ -25,12 +25,23 @@ class EventBookPortfolio(AbstractComponent):
         """
         _intent_model = EventBookIntentModel(property_manager=property_manager, default_save_intent=default_save_intent,
                                              intent_type_additions=intent_type_additions)
-        super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save)
+        super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save,
+                         default_module='aistac.handlers.python_handlers',
+                         default_source_handler='PythonSourceHandler',
+                         default_persist_handler='PythonPersistHandler')
 
     @classmethod
-    def from_uri(cls, task_name: str, uri_pm_path: str, default_save=None, **kwargs):
+    def from_uri(cls, task_name: str, uri_pm_path: str, pm_file_type: str = None, pm_module: str = None,
+                 pm_handler: str = None, default_save=None, template_source_path: str = None,
+                 template_persist_path: str = None, template_source_module: str = None,
+                 template_persist_module: str = None, template_source_handler: str = None,
+                 template_persist_handler: str = None, **kwargs):
         _pm = EventBookPropertyManager(task_name=task_name)
         super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, **kwargs)
+        super()._add_templates(property_manager=_pm, source_path=template_source_path, save=default_save,
+                               persist_path=template_persist_path, source_module=template_source_module,
+                               persist_module=template_persist_module, source_handler=template_source_handler,
+                               persist_handler=template_persist_handler)
         return cls(property_manager=_pm, default_save=default_save)
 
     @classmethod
