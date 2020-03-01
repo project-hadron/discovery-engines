@@ -33,12 +33,38 @@ class EventBookPortfolio(AbstractComponent):
                  template_persist_path: str = None, template_source_module: str = None,
                  template_persist_module: str = None, template_source_handler: str = None,
                  template_persist_handler: str = None, **kwargs):
+        """ Class Factory Method to instantiates the component application. The Factory Method handles the
+        instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
+
+        by default the handler is local Pandas but also supports remote AWS S3 and Redis. It use these Factory
+        instantiations ensure that the schema is s3:// or redis:// and the handler will be automatically redirected
+
+         :param task_name: The reference name that uniquely identifies a task or subset of the property manager
+         :param uri_pm_path: A URI that identifies the resource path for the property manager.
+         :param pm_file_type: (optional) defines a specific file type for the property manager
+         :param default_save: (optional) if the configuration should be persisted. default to 'True'
+         :param pm_module: (optional) the module or package name where the handler can be found
+         :param pm_handler: (optional) the handler for retrieving the resource
+         :param default_save: (optional) if the configuration should be persisted. default to 'True'
+         :param template_source_path: (optional) a default source root path for the source canonicals
+         :param template_persist_path: (optional) a default source root path for the persisted canonicals
+         :param template_source_module: (optional) a default module package path for the source handlers
+         :param template_persist_module: (optional) a default module package path for the persist handlers
+         :param template_source_handler: (optional) a default read only source handler
+         :param template_persist_handler: (optional) a default read write persist handler
+         :param kwargs: to pass to the connector contract
+         :return: the initialised class instance
+         """
+        pm_file_type = pm_file_type if isinstance(pm_file_type, str) else 'pickle'
+        pm_module = pm_module if isinstance(pm_module, str) else 'aistac.handlers.python_handlers'
+        pm_handler = pm_handler if isinstance(pm_handler, str) else 'PythonPersistHandler'
         _pm = EventBookPropertyManager(task_name=task_name)
-        super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, **kwargs)
-        super()._add_templates(property_manager=_pm, source_path=template_source_path, save=default_save,
-                               persist_path=template_persist_path, source_module=template_source_module,
-                               persist_module=template_persist_module, source_handler=template_source_handler,
-                               persist_handler=template_persist_handler)
+        super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, pm_file_type=pm_file_type,
+                                 pm_module=pm_module, pm_handler=pm_handler, **kwargs)
+        super()._add_templates(property_manager=_pm, save=default_save,
+                               source_path=template_source_path, persist_path=template_persist_path,
+                               source_module=template_source_module, persist_module=template_persist_module,
+                               source_handler=template_source_handler, persist_handler=template_persist_handler)
         return cls(property_manager=_pm, default_save=default_save)
 
     @classmethod
