@@ -65,7 +65,9 @@ class EventBookPortfolio(AbstractComponent):
                                source_path=template_source_path, persist_path=template_persist_path,
                                source_module=template_source_module, persist_module=template_persist_module,
                                source_handler=template_source_handler, persist_handler=template_persist_handler)
-        return cls(property_manager=_pm, default_save=default_save)
+        instance = cls(property_manager=_pm, default_save=default_save)
+        instance.modify_connector_from_template(connector_names=instance.pm.connector_contract_list)
+        return instance
 
     @classmethod
     def _from_remote_s3(cls) -> (str, str):
