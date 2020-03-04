@@ -1,5 +1,7 @@
 import inspect
-from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory
+from typing import Any
+
+from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory, AbstractEventBook
 from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 from aistac.intent.abstract_intent import AbstractIntentModel
 from aistac.properties.abstract_properties import AbstractPropertyManager
@@ -8,6 +10,8 @@ __author__ = 'Darryl Oatridge'
 
 
 class EventBookIntentModel(AbstractIntentModel):
+
+    _PORTFOLIO_LEVEL = 'portfolio'
 
     def __init__(self, property_manager: AbstractPropertyManager, default_save_intent: bool=None,
                  intent_type_additions: list=None):
@@ -27,33 +31,26 @@ class EventBookIntentModel(AbstractIntentModel):
                          default_save_intent=default_save_intent, default_intent_level=default_intent_level,
                          default_replace_intent=default_replace_intent, intent_type_additions=intent_type_additions)
 
-    def run_intent_pipeline(self, run_book: [str, int, list]=None, exclude: list=None, **kwargs) -> dict:
+    def run_intent_pipeline(self, exclude_books: [str, list]=None, **kwargs):
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
         defined by the intent_contract.
 
-        :param run_book: (optional) the levels to run containing the runbook references
-        :param exclude: (optional) a list of book_names in the runbook not to start
+        :param exclude_books: (optional) a list of book_names in the portfolio not to start
         """
-        exclude = exclude if isinstance(exclude, list) else list()
+        exclude_books = self._pm.list_formatter(exclude_books)
         book_portfolio = dict()
         if self._pm.has_intent():
-            # get the list of levels to run
-            if isinstance(run_book, (int, str, list)):
-                levels = self._pm.list_formatter(run_book)
-            else:
-                levels = sorted(self._pm.get_intent().keys())
-            for level in levels:
-                for book_name, params in self._pm.get_intent(level=level).items():
-                    if book_name in exclude:
-                        continue
-                    params.update(params.pop('kwargs', {}))
-                    eb = eval(f"self.set_event_book(book_name='{book_name}', start_book=True, "
-                              f"save_intent=False, **{params})")
-                    book_portfolio.update({book_name: eb})
+            for book_name, params in self._pm.get_intent(level=self._PORTFOLIO_LEVEL).items():
+                if book_name in exclude_books:
+                    continue
+                params.update(params.pop('kwargs', {}))
+                eb = eval(f"self.set_event_book(book_name='{book_name}', start_book=True, "
+                          f"save_intent=False, **{params})")
+                book_portfolio.update({book_name: eb})
         return book_portfolio
 
     def set_event_book(self, book_name: str, module_name: str=None, event_book_cls: str=None, start_book: bool=None,
-                       save_intent: bool=None, intent_level: [int, str]=None, replace_intent: bool=None, **kwargs):
+                       save_intent: bool=None, **kwargs):
         """ creates an event book and/or saves the event book intent
 
         :param book_name: the reference book name
@@ -61,14 +58,13 @@ class EventBookIntentModel(AbstractIntentModel):
         :param event_book_cls: (optional) if passing connectors. The name of the Event Book class to instantiate
         :param start_book: (optional) if the event book should be created and returned.
         :param save_intent: (optional) save the intent to the Intent Properties. defaults to the default_save_intent
-        :param intent_level: (optional) the level of the intent, default to zero
         :param replace_intent the current intent at this level. if true forces one intent per level. default is False
         """
         # resolve intent persist options
-        replace_intent = replace_intent if isinstance(replace_intent, bool) else True
+        replace_intent = True
         intent_params = self._intent_builder(method=inspect.currentframe().f_code.co_name, params=locals())
         intent_params.update({book_name: intent_params.pop(inspect.currentframe().f_code.co_name)})
-        self._set_intend_signature(intent_params, intent_level=intent_level, save_intent=save_intent,
+        self._set_intend_signature(intent_params, intent_level=self._PORTFOLIO_LEVEL, save_intent=save_intent,
                                    replace_intent=replace_intent)
         # create the event book
         if isinstance(start_book, bool) and start_book:

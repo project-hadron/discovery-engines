@@ -36,11 +36,7 @@ class PandasEventBook(AbstractEventBook):
         self._count_distance = count_distance if isinstance(count_distance, int) else 0
         self._events_log_distance = events_log_distance if isinstance(events_log_distance, int) else 0
         # initialise the globals
-        self.__book_state = pd.DataFrame()
-        self.__events_log = dict()
-        self.__event_count = 0
-        self.__book_count = 0
-        self.__last_book_time = datetime.now()
+        self.reset_state()
 
     @property
     def count_distance(self) -> int:
@@ -71,6 +67,7 @@ class PandasEventBook(AbstractEventBook):
 
     @property
     def current_state(self) -> (datetime, pd.DataFrame):
+        """returns the current state of the evetn book"""
         return datetime.now(), self.__book_state.copy(deep=True)
 
     @property
@@ -103,6 +100,35 @@ class PandasEventBook(AbstractEventBook):
         self._update_counters()
         return _time
 
+    def reset_state(self):
+        self.__book_state = pd.DataFrame()
+        self.__events_log = dict()
+        self.__event_count = 0
+        self.__book_count = 0
+        self.__last_book_time = datetime.now()
+
+    def save_state(self, with_reset: bool=None, **kwargs):
+        """ saves the current state and optionally resets the event book"""
+        if isinstance(self._state_connector, ConnectorContract):
+            _current_state = self.current_state[1]
+            handler = HandlerFactory.instantiate(self._state_connector)
+            handler.persist_canonical(_current_state, **kwargs)
+            if isinstance(with_reset, bool) and with_reset:
+                self.reset_state()
+        return
+
+    def backup_state(self, stamp_uri: str=None, **kwargs):
+        """ persists the event book state with an alternative to save off a stamped copy to a provided URI
+
+        :param stamp_uri: in addition to persisting the event book, save to this uri
+        :return:
+        """
+        if isinstance(self._state_connector, ConnectorContract) and isinstance(stamp_uri, str):
+            _current_state = self.current_state[1]
+            handler = HandlerFactory.instantiate(self._state_connector)
+            handler.backup_canonical(canonical=_current_state, uri=stamp_uri, **kwargs)
+        return
+
     def _update_counters(self):
         self.__book_count += 1 if self._count_distance > 0 else 0
         self.__event_count += 1 if self._events_log_distance > 0 else 0
@@ -114,7 +140,7 @@ class PandasEventBook(AbstractEventBook):
             self.__book_count = 0
             book_update = True
         if book_update:
-            self.persist_book()
+            self.save_state()
             self._persist_events()
             self.__events_log = dict()
             self.__event_count = 0
@@ -124,27 +150,6 @@ class PandasEventBook(AbstractEventBook):
             self.__events_log = dict()
         return
 
-    def persist_book(self, **kwargs):
-        """ persists the event book state """
-        if isinstance(self._state_connector, ConnectorContract):
-            _current_state = self.current_state[1]
-            handler = HandlerFactory.instantiate(self._state_connector)
-            handler.persist_canonical(_current_state, **kwargs)
-        return
-
-    def persist_backup_book(self, stamp_uri: str=None, **kwargs):
-        """ persists the event book state with an alternative to save off a stamped copy to a provided URI
-
-        :param stamp_uri: in addition to persisting the event book, save to this uri
-        :return:
-        """
-        if isinstance(self._state_connector, ConnectorContract):
-            _current_state = self.current_state[1]
-            handler = HandlerFactory.instantiate(self._state_connector)
-            if isinstance(stamp_uri, str):
-                handler.backup_canonical(canonical=_current_state, uri=stamp_uri, **kwargs)
-        return
-
     def _persist_events(self):
         """Saves the pandas.DataFrame to the persisted stater"""
         if isinstance(self._events_connector, ConnectorContract):
@@ -152,8 +157,8 @@ class PandasEventBook(AbstractEventBook):
             handler.persist_canonical(self.__events_log)
         return
 
-    def reset_state(self):
-        """resets the state from last persisted and applies any events from the event log"""
+    def recover_state(self):
+        """recovers the state from last persisted and applies any events from the event log"""
         if isinstance(self._state_connector, ConnectorContract):
             handler = HandlerFactory.instantiate(self._state_connector)
             self.__book_state = handler.load_canonical()

@@ -2,7 +2,7 @@ import unittest
 import os
 import shutil
 
-from ds_foundation.properties.property_manager import PropertyManager
+from aistac.properties.property_manager import PropertyManager
 
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 

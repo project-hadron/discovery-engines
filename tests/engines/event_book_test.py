@@ -2,13 +2,13 @@ import shutil
 import unittest
 import os
 import pandas as pd
-from ds_foundation.handlers.abstract_handlers import ConnectorContract
+from aistac.handlers.abstract_handlers import ConnectorContract
 from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 
 
 class EventBookTest(unittest.TestCase):
 
-    MODULE = "ds_foundation.handlers.python_handlers"
+    MODULE = "aistac.handlers.python_handlers"
     HANDLER = "PythonPersistHandler"
 
     def setUp(self):

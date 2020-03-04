@@ -4,7 +4,7 @@ import unittest
 
 import pandas as pd
 
-from ds_foundation.handlers.abstract_handlers import ConnectorContract
+from aistac.handlers.abstract_handlers import ConnectorContract
 
 from ds_engines.components.event_book_portfolio import EventBookPortfolio
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
@@ -23,7 +23,7 @@ class EventBookPortfolioTest(unittest.TestCase):
 
     def test_runs(self):
         pm = EventBookPropertyManager('task')
-        cc = ConnectorContract('connector', module_name='ds_foundation.handlers.dummy_handlers', handler='DummyPersistHandler')
+        cc = ConnectorContract('connector', module_name='aistac.handlers.dummy_handlers', handler='DummyPersistHandler')
         pm.set_property_connector(connector_contract=cc)
         EventBookPortfolio(property_manager=pm)
 
@@ -37,16 +37,16 @@ class EventBookPortfolioTest(unittest.TestCase):
         self.assertEqual(['book_one', 'book_two'], engine.active_books)
         engine.remove_event_books(book_names='book_one')
         self.assertEqual(['book_two'], engine.active_books)
-        self.assertEqual(['book_two'], list(engine.pm.get_intent().get('primary').keys()))
+        self.assertEqual(['book_two'], list(engine.pm.get_intent().get('portfolio').keys()))
 
     def test_state_persist(self):
         engine = EventBookPortfolio.from_env('task')
         state_connector = ConnectorContract(uri=engine.pm.file_pattern('persist_book_state'),
-                                            module_name="ds_foundation.handlers.dummy_handlers",
+                                            module_name="aistac.handlers.dummy_handlers",
                                             handler="DummyPersistHandler")
         engine.add_event_book_connectors('persist_book_state', state_connector=state_connector)
-        engine.add_event_book('persist_book', state_connector='persist_book_state', count_distance=1, start_book=True)
-        engine.increment_event('persist_book', pd.DataFrame.from_dict(data={'A': [1,2,3], 'B': [3,4,5]}))
+        engine.add_event_book('save_state', state_connector='persist_book_state', count_distance=1, start_book=True)
+        engine.increment_event('save_state', pd.DataFrame.from_dict(data={'A': [1,2,3], 'B': [3,4,5]}))
 
 
 if __name__ == '__main__':
