@@ -169,7 +169,9 @@ class EventBookPortfolio(AbstractComponent):
         uri_path = uri_path if isinstance(uri_path, str) else template.uri_raw
         module_name = module_name if isinstance(module_name, str) else template.module_name
         handler = handler if isinstance(handler, str) else template.handler
-        kwargs = template.kwargs.update(kwargs) if isinstance(kwargs, dict) else template.kwargs
+        if not isinstance(kwargs, dict):
+            kwargs = {}
+        template.kwargs.update(kwargs)
         book_template = ConnectorContract(uri=uri_path, module_name=module_name, handler=handler, **kwargs)
         if self.pm.has_connector(self.BOOK_TEMPLATE_CONNECTOR):
             self.remove_connector_contract(connector_name=self.BOOK_TEMPLATE_CONNECTOR)
@@ -195,7 +197,9 @@ class EventBookPortfolio(AbstractComponent):
         uri_file = self.pm.file_pattern(connector_name=book_name, file_type=file_type, versioned=versioned,
                                         stamped=stamped)
         uri = os.path.join(template.path, uri_file)
-        kwargs = template.kwargs.update(kwargs) if isinstance(kwargs, dict) else template.kwargs
+        if not isinstance(kwargs, dict):
+            kwargs = {}
+        template.kwargs.update(kwargs)
         cc = ConnectorContract(uri=uri, module_name=template.module_name, handler=template.handler, **kwargs)
         self.add_connector_contract(connector_name=book_name, connector_contract=cc, template_aligned=True, save=save)
         # add the log persist
