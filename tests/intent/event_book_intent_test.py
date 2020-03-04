@@ -32,7 +32,7 @@ class EventBookIntentModelTest(unittest.TestCase):
         im.set_event_book(book_name='book_one')
         im.set_event_book(book_name='book_two', count_distance=2, module_name='some.name', event_book_cls='MyEvents')
         result = self.pm.get_intent()
-        control = {'portfolio': {'book_one': {'kwargs': {}},
+        control = {'report_portfolio': {'book_one': {'kwargs': {}},
                                  'book_two': {'module_name': 'some.name', 'event_book_cls': 'MyEvents', 'kwargs': {'count_distance': 2}}}}
         self.assertDictEqual(control, result)
 

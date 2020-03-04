@@ -96,42 +96,8 @@ class EventBookPortfolio(AbstractComponent):
 
     @property
     def active_books(self):
-        """returns a list of portfolio event names"""
+        """returns a list of report_portfolio event names"""
         return list(self.__book_portfolio.keys())
-
-    def add_event_book(self, book_name: str, module_name: str=None, event_book_cls: str=None,
-                       start_book: bool=None, intent_level: [int, str]=None, **kwargs):
-        """ sets an event book as a parameterised intent
-
-        :param book_name: the unique reference name for the event book
-        :param module_name: (optional) a package path for an Event Book class
-        :param event_book_cls: (optional) a concrete implmentation of the AbstractEventBook
-        :param start_book: (optional) if an instance of the Event Book should be started and added to the portfolio.
-        :param intent_level: (optional) an intent level to put the parameterised intent
-        :param kwargs: any kwargs to be pass as part of the parameterised intent
-        """
-        if not isinstance(book_name, str) or len(book_name) == 0:
-            raise ValueError("The book_name must be a valid string")
-        if self.is_event_book(book_name=book_name):
-            raise KeyError(f"The book name '{book_name}' already exists in the portfolio")
-        result = self.intent_model.set_event_book(book_name=book_name, save_intent=True, start_book=start_book,
-                                                  module_name=module_name, event_book_cls=event_book_cls,
-                                                  intent_level=intent_level, replace_intent=True, **kwargs)
-        if isinstance(result, AbstractEventBook):
-            self.__book_portfolio.update({book_name: result})
-        return
-
-    def start_event_books(self, run_book: [str, list]=None):
-        """runs the intent pipeline to create the portfolio. Optionally a list of Event Books can
-         be passed to selectively run certain event books. If an event book already exists it won't be replaced.
-         To remove an event book, explicitly 'remove_event_book(...)'"""
-        if isinstance(run_book, (str, list)):
-            run_book = self.pm.list_formatter(run_book)
-        else:
-            run_book = None
-        self.__book_portfolio.update(self.intent_model.run_intent_pipeline(run_book=run_book,
-                                                                           exclude=list(self.__book_portfolio.keys())))
-        return
 
     def is_event_book(self, book_name: str) -> bool:
         """Tests if an event book exists and if it is of type AbstractEventBook"""
@@ -141,21 +107,30 @@ class EventBookPortfolio(AbstractComponent):
         return False
 
     def get_event_book(self, book_name: str):
-        """retrieves an event book instance from the portfolio by name"""
+        """retrieves an event book instance from the report_portfolio by name"""
         if not self.is_event_book(book_name=book_name):
-            raise ValueError(f"The event book instance '{book_name}' can't be found in the portfolio.")
+            raise ValueError(f"The event book instance '{book_name}' can't be found in the report_portfolio.")
         return self.__book_portfolio.get(book_name)
 
-    def get_event_book_connectors(self, connector_name: str) -> ConnectorContract:
+    def start_portfolio(self, exclude_books: [str, list]=None,):
+        """runs the intent pipeline
+
+        :param exclude_books: (optional) a list of book_names in the report_portfolio not to start
+        """
+        portfolio = self.intent_model.run_intent_pipeline(exclude_books=exclude_books)
+        self.__book_portfolio.update(portfolio)
+        return
+
+    def get_frame_contract(self, book_name: str) -> ConnectorContract:
         """ retrieves a named event book connector
 
-        :param connector_name: the unique name of the connector contract
+        :param book_name: the unique name of event book
         :return: ConnectorContract
         """
-        return self.pm.get_connector_contract(connector_name=connector_name)
+        return self.pm.get_connector_contract(connector_name=book_name)
 
-    def set_book_connector_template(self, uri_path: str=None, module_name: str=None, handler: str=None,
-                                    save: bool=None, **kwargs):
+    def set_frame_contract_template(self, uri_path: str=None, module_name: str=None, handler: str=None,
+                               save: bool=None, **kwargs):
         """ sets the book template connector that is used as the base for all event book persistence. for
         parameters not given, the persist connector template is used.
 
@@ -179,7 +154,7 @@ class EventBookPortfolio(AbstractComponent):
         self.pm_persist(save=save)
         return
 
-    def add_book_connector(self, book_name: str, with_log: bool=None, file_type: str=None, versioned: bool=None,
+    def add_frame_contract(self, book_name: str, with_log: bool=None, file_type: str=None, versioned: bool=None,
                            stamped: bool=None, save: bool=None, **kwargs):
         """ adds an event book connector using the book connector template and appending a book pattern to the URI path
 
@@ -210,6 +185,15 @@ class EventBookPortfolio(AbstractComponent):
             self.add_connector_contract(connector_name=uri_log, connector_contract=lc, template_aligned=True, save=save)
         return
 
+    def persist_state(self, book_name: str, state: Any):
+        """
+
+        :param book_name: the name of the event book
+        :param state: the event book state to persist
+        """
+        self.persist_canonical(connector_name=book_name, canonical=state)
+        return
+
     def stop_event_books(self, book_names: [str, list]):
         """stops the event books listed in the book names"""
         book_names = self.pm.list_formatter(book_names)
@@ -219,7 +203,7 @@ class EventBookPortfolio(AbstractComponent):
         return
 
     def reset_portfolio(self):
-        """resets the event book portfolio removing all running event books and intent"""
+        """resets the event book report_portfolio removing all running event books and intent"""
         self.__book_portfolio.clear()
         self.pm.reset_intents()
         return
@@ -237,7 +221,7 @@ class EventBookPortfolio(AbstractComponent):
                 self.remove_connector_contract(events_log_name)
             # remove the intent
             self.pm.remove_intent(intent_param=book)
-            # remove the portfolio entry
+            # remove the report_portfolio entry
             if book in self.__book_portfolio.keys():
                 self.__book_portfolio.pop(book)
         return
@@ -293,7 +277,7 @@ class EventBookPortfolio(AbstractComponent):
             return df_style
         return df
 
-    def portfolio(self, stylise: bool=True):
+    def report_portfolio(self, stylise: bool=True):
         """ generates a report on all the intent
 
         :param stylise: returns a stylised dataframe with formatting

@@ -38,21 +38,13 @@ class EventBookPortfolioTest(unittest.TestCase):
         self.assertEqual(['book_one', 'book_two'], engine.active_books)
         engine.remove_event_books(book_names='book_one')
         self.assertEqual(['book_two'], engine.active_books)
-        self.assertEqual(['book_two'], list(engine.pm.get_intent().get('portfolio').keys()))
+        self.assertEqual(['book_two'], list(engine.pm.get_intent().get('report_portfolio').keys()))
 
     def test_book_connector_template(self):
         engine = EventBookPortfolio.from_env('task')
         engine.set_book_connector_template(uri_path=os.environ['AISTAC_PM_PATH'])
-        self.assertEqual()
-
-
-
-
-        state_connector = ConnectorContract(uri=engine.pm.file_pattern('persist_book_state'),
-                                            module_name="aistac.handlers.dummy_handlers",
-                                            handler="DummyPersistHandler")
-        engine.add_event_book_connectors('persist_book_state', state_connector=state_connector)
-        engine.add_event_book('save_state', state_connector='persist_book_state', count_distance=1, start_book=True)
+        engine.intent_model.set_event_book()
+        engine.add_book_connector(book_name='test')
         engine.increment_event('save_state', pd.DataFrame.from_dict(data={'A': [1,2,3], 'B': [3,4,5]}))
 
 

@@ -1,7 +1,6 @@
 import inspect
-from typing import Any
 
-from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory, AbstractEventBook
+from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory
 from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 from aistac.intent.abstract_intent import AbstractIntentModel
 from aistac.properties.abstract_properties import AbstractPropertyManager
@@ -11,7 +10,7 @@ __author__ = 'Darryl Oatridge'
 
 class EventBookIntentModel(AbstractIntentModel):
 
-    _PORTFOLIO_LEVEL = 'portfolio'
+    _PORTFOLIO_LEVEL = 'report_portfolio'
 
     def __init__(self, property_manager: AbstractPropertyManager, default_save_intent: bool=None,
                  intent_type_additions: list=None):
@@ -35,7 +34,7 @@ class EventBookIntentModel(AbstractIntentModel):
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
         defined by the intent_contract.
 
-        :param exclude_books: (optional) a list of book_names in the portfolio not to start
+        :param exclude_books: (optional) a list of book_names in the report_portfolio not to start
         """
         exclude_books = self._pm.list_formatter(exclude_books)
         book_portfolio = dict()
@@ -58,7 +57,6 @@ class EventBookIntentModel(AbstractIntentModel):
         :param event_book_cls: (optional) if passing connectors. The name of the Event Book class to instantiate
         :param start_book: (optional) if the event book should be created and returned.
         :param save_intent: (optional) save the intent to the Intent Properties. defaults to the default_save_intent
-        :param replace_intent the current intent at this level. if true forces one intent per level. default is False
         """
         # resolve intent persist options
         replace_intent = True
