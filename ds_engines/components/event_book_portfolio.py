@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from typing import Any
 import pandas as pd
@@ -13,6 +14,7 @@ __author__ = 'Darryl Oatridge'
 class EventBookPortfolio(AbstractComponent):
 
     __book_portfolio = dict()
+    BOOK_TEMPLATE_CONNECTOR = 'book_template_connector'
 
     def __init__(self, property_manager: EventBookPropertyManager, default_save=None, default_save_intent: bool=None,
                  intent_type_additions: list=None):
@@ -59,6 +61,12 @@ class EventBookPortfolio(AbstractComponent):
         pm_module = pm_module if isinstance(pm_module, str) else 'aistac.handlers.python_handlers'
         pm_handler = pm_handler if isinstance(pm_handler, str) else 'PythonPersistHandler'
         _pm = EventBookPropertyManager(task_name=task_name)
+        if not isinstance(template_source_module, str) or template_source_module.startswith('aistac.'):
+            template_source_module = 'ds_connectors.handlers.pandas_handlers'
+            template_source_handler = 'PandasSourceHandler'
+        if not isinstance(template_persist_module, str) or template_persist_module.startswith('aistac.'):
+            template_persist_module = 'ds_connectors.handlers.pandas_handlers'
+            template_persist_handler = 'PandasPersistHandler'
         super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, pm_file_type=pm_file_type,
                                  pm_module=pm_module, pm_handler=pm_handler, **kwargs)
         super()._add_templates(property_manager=_pm, save=default_save,
@@ -146,25 +154,56 @@ class EventBookPortfolio(AbstractComponent):
         """
         return self.pm.get_connector_contract(connector_name=connector_name)
 
-    def add_event_book_connectors(self, book_name: str, state_connector: ConnectorContract,
-                                  events_log_connector: ConnectorContract=None):
-        """sets a pair of connectors for the state and event log. The connectors will have the name of the book
-        with a events log connector having a suffix of '_log'
+    def set_book_connector_template(self, uri_path: str=None, module_name: str=None, handler: str=None,
+                                    save: bool=None, **kwargs):
+        """ sets the book template connector that is used as the base for all event book persistence. for
+        parameters not given, the persist connector template is used.
 
-        :param book_name: the unique name of the event book
-        :param state_connector: the state connector contract
-        :param events_log_connector: (optional) the events log connector contract
+        :param uri_path: a uri path
+        :param module_name: a module package name
+        :param handler: a handler
+        :param save: override of the default save action set at initialisation.
+        :param kwargs: additional kwargs
         """
-        state_name = book_name
-        events_log_name = "_".join([book_name, '_log'])
-        if isinstance(state_connector, ConnectorContract):
-            if self.pm.has_connector(state_name):
-                self.remove_connector_contract(connector_name=state_name)
-            self.add_connector_contract(connector_name=state_name, connector_contract=state_connector)
-        if isinstance(events_log_connector, ConnectorContract):
-            if self.pm.has_connector(events_log_name):
-                self.remove_connector_contract(connector_name=events_log_name)
-            self.pm.set_connector_contract(connector_name=events_log_name, connector_contract=events_log_connector)
+        template = self.pm.get_connector_contract(self.TEMPLATE_PERSIST)
+        uri_path = uri_path if isinstance(uri_path, str) else template.uri_raw
+        module_name = module_name if isinstance(module_name, str) else template.module_name
+        handler = handler if isinstance(handler, str) else template.handler
+        kwargs = template.kwargs.update(kwargs) if isinstance(kwargs, dict) else template.kwargs
+        book_template = ConnectorContract(uri=uri_path, module_name=module_name, handler=handler, **kwargs)
+        if self.pm.has_connector(self.BOOK_TEMPLATE_CONNECTOR):
+            self.remove_connector_contract(connector_name=self.BOOK_TEMPLATE_CONNECTOR)
+        self.pm.set_connector_contract(connector_name=self.BOOK_TEMPLATE_CONNECTOR, connector_contract=book_template)
+        self.pm_persist(save=save)
+        return
+
+    def add_book_connector(self, book_name: str, with_log: bool=None, file_type: str=None, versioned: bool=None,
+                           stamped: bool=None, save: bool=None, **kwargs):
+        """ adds an event book connector using the book connector template and appending a book pattern to the URI path
+
+        :param book_name: the name of the event book
+        :param with_log: (optional) if an events log connector should be created
+        :param file_type: (optional) a file type extension. defaults to 'pickle'
+        :param versioned: (optional) if the connector uri should be versioned
+        :param stamped: (optional) if the connector uri should be timestamped
+        :param save: (optional) override of the default save action set at initialisation.
+        :param kwargs: extra kwargs to pass to the connector
+        """
+        if not self.pm.has_connector(connector_name=self.BOOK_TEMPLATE_CONNECTOR):
+            raise ConnectionError(f"The book template connector has not been set")
+        template = self.pm.get_connector_contract(self.BOOK_TEMPLATE_CONNECTOR)
+        uri_file = self.pm.file_pattern(connector_name=book_name, file_type=file_type, versioned=versioned,
+                                        stamped=stamped)
+        uri = os.path.join(template.path, uri_file)
+        kwargs = template.kwargs.update(kwargs) if isinstance(kwargs, dict) else template.kwargs
+        cc = ConnectorContract(uri=uri, module_name=template.module_name, handler=template.handler, **kwargs)
+        self.add_connector_contract(connector_name=book_name, connector_contract=cc, template_aligned=True, save=save)
+        # add the log persist
+        if isinstance(with_log, bool) and with_log:
+            log = f"{book_name}_log"
+            uri_log = self.pm.file_pattern(connector_name=log, file_type=file_type)
+            lc = ConnectorContract(uri=uri, module_name=template.module_name, handler=template.handler, **kwargs)
+            self.add_connector_contract(connector_name=uri_log, connector_contract=lc, template_aligned=True, save=save)
         return
 
     def stop_event_books(self, book_names: [str, list]):

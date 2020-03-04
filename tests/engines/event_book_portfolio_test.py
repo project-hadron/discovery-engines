@@ -9,6 +9,7 @@ from aistac.handlers.abstract_handlers import ConnectorContract
 from ds_engines.components.event_book_portfolio import EventBookPortfolio
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 
+
 class EventBookPortfolioTest(unittest.TestCase):
 
     def setUp(self):
@@ -39,8 +40,14 @@ class EventBookPortfolioTest(unittest.TestCase):
         self.assertEqual(['book_two'], engine.active_books)
         self.assertEqual(['book_two'], list(engine.pm.get_intent().get('portfolio').keys()))
 
-    def test_state_persist(self):
+    def test_book_connector_template(self):
         engine = EventBookPortfolio.from_env('task')
+        engine.set_book_connector_template(uri_path=os.environ['AISTAC_PM_PATH'])
+        self.assertEqual()
+
+
+
+
         state_connector = ConnectorContract(uri=engine.pm.file_pattern('persist_book_state'),
                                             module_name="aistac.handlers.dummy_handlers",
                                             handler="DummyPersistHandler")
