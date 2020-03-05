@@ -185,13 +185,11 @@ class EventBookPortfolio(AbstractComponent):
             self.add_connector_contract(connector_name=uri_log, connector_contract=lc, template_aligned=True, save=save)
         return
 
-    def persist_state(self, book_name: str, state: Any):
-        """
-
-        :param book_name: the name of the event book
-        :param state: the event book state to persist
-        """
-        self.persist_canonical(connector_name=book_name, canonical=state)
+    def persist_state(self, book_name: str):
+        """ persists the current state of an event book"""
+        if self.is_event_book(book_name=book_name):
+            state = self.current_state(book_name=book_name)[1]
+            self.persist_canonical(connector_name=book_name, canonical=state)
         return
 
     def stop_event_books(self, book_names: [str, list]):
