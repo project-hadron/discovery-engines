@@ -192,6 +192,10 @@ class EventBookPortfolio(AbstractComponent):
             self.persist_canonical(connector_name=book_name, canonical=state)
         return
 
+    def load_frame(self, book_name: str):
+        """loads the current persisted state"""
+        return self.load_canonical(connector_name=book_name)
+
     def stop_event_books(self, book_names: [str, list]):
         """stops the event books listed in the book names"""
         book_names = self.pm.list_formatter(book_names)
