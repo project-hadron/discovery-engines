@@ -110,7 +110,5 @@ class EventBookTest(unittest.TestCase):
         print(eb.current_state(fillna=True))
 
 
-
-
 if __name__ == '__main__':
     unittest.main()
