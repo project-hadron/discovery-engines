@@ -188,11 +188,11 @@ class EventBookPortfolio(AbstractComponent):
     def persist_state(self, book_name: str):
         """ persists the current state of an event book"""
         if self.is_event_book(book_name=book_name):
-            state = self.current_state(book_name=book_name)[1]
+            state = self.current_state(book_name=book_name)
             self.persist_canonical(connector_name=book_name, canonical=state)
         return
 
-    def load_frame(self, book_name: str):
+    def load_state(self, book_name: str):
         """loads the current persisted state"""
         return self.load_canonical(connector_name=book_name)
 
@@ -210,7 +210,7 @@ class EventBookPortfolio(AbstractComponent):
         self.pm.reset_intents()
         return
 
-    def remove_event_books(self, book_names: [str, list]):
+    def remove_event_books(self, book_names: [str, list], save: bool=None):
         """removes the event book"""
         book_names = self.pm.list_formatter(book_names)
         for book in book_names:
@@ -226,11 +226,12 @@ class EventBookPortfolio(AbstractComponent):
             # remove the report_portfolio entry
             if book in self.__book_portfolio.keys():
                 self.__book_portfolio.pop(book)
+            self.pm_persist(save=save)
         return
 
-    def current_state(self, book_name: str) -> (datetime, Any):
+    def current_state(self, book_name: str, fillna: bool=None) -> (datetime, Any):
         event_book = self.get_event_book(book_name=book_name)
-        return event_book.current_state
+        return event_book.current_state(fillna=fillna)
 
     def add_event(self, book_name: str, event: Any):
         return self.get_event_book(book_name=book_name).add_event(event=event)

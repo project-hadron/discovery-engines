@@ -1,6 +1,7 @@
 from copy import deepcopy
 from datetime import datetime
 import pandas as pd
+import numpy as np
 from aistac.handlers.abstract_event_book import AbstractEventBook
 from aistac.handlers.abstract_handlers import ConnectorContract, HandlerFactory
 
@@ -65,14 +66,31 @@ class PandasEventBook(AbstractEventBook):
         """sets the state events log distance."""
         self._events_log_distance = distance
 
-    @property
-    def current_state(self) -> (datetime, pd.DataFrame):
-        """returns the current state of the evetn book"""
-        return datetime.now(), self.__book_state.copy(deep=True)
+    def current_state(self, fillna: bool=None) -> pd.DataFrame:
+        """returns the current state of the event book"""
+        df = self.__book_state.copy(deep=True)
+        if isinstance(fillna, bool) and fillna:
+            df = self._fillna(df)
+        return df
 
-    @property
     def _current_events_log(self) -> dict:
         return deepcopy(self.__events_log)
+
+    @staticmethod
+    def _fillna(df: pd.DataFrame):
+        """replaces NaN values - 0 for int, float, datetime, <NA> for category, False for bool, '' for objects """
+        for col in df.columns:
+            if df[col].dtype.name.lower().startswith('int') or df[col].dtype.name.startswith('float'):
+                df[col].fillna(0, inplace=True)
+            elif df[col].dtype.name.lower().startswith('date') or df[col].dtype.name.lower().startswith('time'):
+                df[col].fillna(0, inplace=True)
+            elif df[col].dtype.name.lower().startswith('bool'):
+                df[col].fillna(False, inplace=True)
+            elif df[col].dtype.name.lower().startswith('category'):
+                df[col] = df[col].cat.add_categories("<NA>").fillna('<NA>')
+            else:
+                df[col].fillna('', inplace=True)
+        return df
 
     def add_event(self, event: pd.DataFrame()) -> datetime:
         _time = datetime.now()
@@ -107,24 +125,25 @@ class PandasEventBook(AbstractEventBook):
         self.__book_count = 0
         self.__last_book_time = datetime.now()
 
-    def save_state(self, with_reset: bool=None, **kwargs):
+    def save_state(self, with_reset: bool=None, fillna: bool=None, **kwargs):
         """ saves the current state and optionally resets the event book"""
         if isinstance(self._state_connector, ConnectorContract):
-            _current_state = self.current_state[1]
+            _current_state = self.current_state(fillna=fillna)
             handler = HandlerFactory.instantiate(self._state_connector)
             handler.persist_canonical(_current_state, **kwargs)
             if isinstance(with_reset, bool) and with_reset:
                 self.reset_state()
         return
 
-    def backup_state(self, stamp_uri: str=None, **kwargs):
+    def backup_state(self, stamp_uri: str=None, fillna: bool=None, **kwargs):
         """ persists the event book state with an alternative to save off a stamped copy to a provided URI
 
         :param stamp_uri: in addition to persisting the event book, save to this uri
+        :param fillna: if the NAN values in the current state should be filled
         :return:
         """
         if isinstance(self._state_connector, ConnectorContract) and isinstance(stamp_uri, str):
-            _current_state = self.current_state[1]
+            _current_state = self.current_state(fillna=fillna)
             handler = HandlerFactory.instantiate(self._state_connector)
             handler.backup_canonical(canonical=_current_state, uri=stamp_uri, **kwargs)
         return
