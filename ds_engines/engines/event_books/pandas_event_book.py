@@ -97,7 +97,7 @@ class PandasEventBook(AbstractEventBook):
             self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['add', event]})
         fix_index = fix_index if isinstance(fix_index, bool) else True
         if fix_index:
-            event = event.drop_duplicates().reindex(self.__book_state.index)
+            event = event.loc[event.index.isin(self.__book_state.index), :]
         self.__book_state = pd.concat([self.__book_state, event], axis=1, sort=False, copy=False)
         self._update_counters()
         return _time
