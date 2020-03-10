@@ -91,11 +91,14 @@ class PandasEventBook(AbstractEventBook):
                 df[col].fillna('', inplace=True)
         return df
 
-    def add_event(self, event: pd.DataFrame()) -> datetime:
+    def add_event(self, event: pd.DataFrame(), fix_index: bool=True) -> datetime:
         _time = datetime.now()
         if self.events_log_distance > 0:
             self.__events_log.update({_time.strftime('%Y%m%d%H%M%S%f'): ['add', event]})
-        self.__book_state = event.combine_first(self.__book_state)
+        fix_index = fix_index if isinstance(fix_index, bool) else True
+        if fix_index:
+            event = event.reindex(self.__book_state.index)
+        self.__book_state = pd.concat([self.__book_state, event], axis=1, sort=False, copy=False)
         self._update_counters()
         return _time
 
