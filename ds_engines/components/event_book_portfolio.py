@@ -17,24 +17,24 @@ class EventBookPortfolio(AbstractComponent):
     BOOK_TEMPLATE_CONNECTOR = 'book_template_connector'
 
     def __init__(self, property_manager: EventBookPropertyManager, default_save=None, default_save_intent: bool=None,
-                 intent_type_additions: list=None):
+                 intent_type_additions: list=None, reset_templates: bool=None, align_connectors: bool=None):
         """ Encapsulation class for the discovery set of classes
 
         :param property_manager: The contract property manager instance for this component
         :param default_save: (optional) The default behaviour of persisting the contracts:
                         if False: The connector contracts are kept in memory (useful for restricted file systems)
         :param intent_type_additions: (optional) if the intent has additional data_types passed as parameters
+        :param reset_templates: (optional) reset connector templates from environ variables (see `report_environ()`)
+        :param align_connectors: (optional) resets aligned connectors to the template
         """
         _intent_model = EventBookIntentModel(property_manager=property_manager, default_save_intent=default_save_intent,
                                              intent_type_additions=intent_type_additions)
-        super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save)
+        super().__init__(property_manager=property_manager, intent_model=_intent_model, default_save=default_save,
+                         reset_templates=reset_templates, align_connectors=align_connectors)
 
     @classmethod
     def from_uri(cls, task_name: str, uri_pm_path: str, pm_file_type: str = None, pm_module: str = None,
-                 pm_handler: str = None, default_save=None, template_source_path: str = None,
-                 template_persist_path: str = None, template_source_module: str = None,
-                 template_persist_module: str = None, template_source_handler: str = None,
-                 template_persist_handler: str = None, **kwargs):
+                 pm_handler: str = None, pm_kwargs: dict = None, default_save=None):
         """ Class Factory Method to instantiates the component application. The Factory Method handles the
         instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
 
@@ -47,35 +47,17 @@ class EventBookPortfolio(AbstractComponent):
          :param default_save: (optional) if the configuration should be persisted. default to 'True'
          :param pm_module: (optional) the module or package name where the handler can be found
          :param pm_handler: (optional) the handler for retrieving the resource
+         :param pm_kwargs: (optional) a dictionary of kwargs to pass to the property manager
          :param default_save: (optional) if the configuration should be persisted. default to 'True'
-         :param template_source_path: (optional) a default source root path for the source canonicals
-         :param template_persist_path: (optional) a default source root path for the persisted canonicals
-         :param template_source_module: (optional) a default module package path for the source handlers
-         :param template_persist_module: (optional) a default module package path for the persist handlers
-         :param template_source_handler: (optional) a default read only source handler
-         :param template_persist_handler: (optional) a default read write persist handler
-         :param kwargs: to pass to the connector contract
          :return: the initialised class instance
          """
         pm_file_type = pm_file_type if isinstance(pm_file_type, str) else 'pickle'
         pm_module = pm_module if isinstance(pm_module, str) else 'aistac.handlers.python_handlers'
         pm_handler = pm_handler if isinstance(pm_handler, str) else 'PythonPersistHandler'
         _pm = EventBookPropertyManager(task_name=task_name)
-        if not isinstance(template_source_module, str) or template_source_module.startswith('aistac.'):
-            template_source_module = 'ds_connectors.handlers.pandas_handlers'
-            template_source_handler = 'PandasSourceHandler'
-        if not isinstance(template_persist_module, str) or template_persist_module.startswith('aistac.'):
-            template_persist_module = 'ds_connectors.handlers.pandas_handlers'
-            template_persist_handler = 'PandasPersistHandler'
         super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, pm_file_type=pm_file_type,
-                                 pm_module=pm_module, pm_handler=pm_handler, **kwargs)
-        super()._add_templates(property_manager=_pm, save=default_save,
-                               source_path=template_source_path, persist_path=template_persist_path,
-                               source_module=template_source_module, persist_module=template_persist_module,
-                               source_handler=template_source_handler, persist_handler=template_persist_handler)
-        instance = cls(property_manager=_pm, default_save=default_save)
-        instance.modify_connector_from_template(connector_names=instance.pm.connector_contract_list)
-        return instance
+                                 pm_module=pm_module, pm_handler=pm_handler, pm_kwargs=pm_kwargs)
+        return cls(property_manager=_pm, default_save=default_save, reset_templates=True, align_connectors=True)
 
     @classmethod
     def _from_remote_s3(cls) -> (str, str):
@@ -130,7 +112,7 @@ class EventBookPortfolio(AbstractComponent):
         return self.pm.get_connector_contract(connector_name=book_name)
 
     def set_frame_contract_template(self, uri_path: str=None, module_name: str=None, handler: str=None,
-                               save: bool=None, **kwargs):
+                                    save: bool=None, **kwargs):
         """ sets the book template connector that is used as the base for all event book persistence. for
         parameters not given, the persist connector template is used.
 
@@ -141,12 +123,12 @@ class EventBookPortfolio(AbstractComponent):
         :param kwargs: additional kwargs
         """
         template = self.pm.get_connector_contract(self.TEMPLATE_PERSIST)
-        uri_path = uri_path if isinstance(uri_path, str) else template.uri_raw
-        module_name = module_name if isinstance(module_name, str) else template.module_name
-        handler = handler if isinstance(handler, str) else template.handler
+        uri_path = uri_path if isinstance(uri_path, str) else template.raw_uri
+        module_name = module_name if isinstance(module_name, str) else template.raw_module_name
+        handler = handler if isinstance(handler, str) else template.raw_handler
         if not isinstance(kwargs, dict):
             kwargs = {}
-        template.kwargs.update(kwargs)
+        kwargs.update(template.raw_kwargs)
         book_template = ConnectorContract(uri=uri_path, module_name=module_name, handler=handler, **kwargs)
         if self.pm.has_connector(self.BOOK_TEMPLATE_CONNECTOR):
             self.remove_connector_contract(connector_name=self.BOOK_TEMPLATE_CONNECTOR)
@@ -174,7 +156,7 @@ class EventBookPortfolio(AbstractComponent):
         uri = os.path.join(template.path, uri_file)
         if not isinstance(kwargs, dict):
             kwargs = {}
-        template.kwargs.update(kwargs)
+        kwargs.update(template.raw_kwargs)
         cc = ConnectorContract(uri=uri, module_name=template.module_name, handler=template.handler, **kwargs)
         self.add_connector_contract(connector_name=book_name, connector_contract=cc, template_aligned=True, save=save)
         # add the log persist
