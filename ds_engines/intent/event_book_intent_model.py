@@ -1,9 +1,10 @@
 import inspect
 
 from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory
-from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 from aistac.intent.abstract_intent import AbstractIntentModel
 from aistac.properties.abstract_properties import AbstractPropertyManager
+from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
+from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 
 __author__ = 'Darryl Oatridge'
 
@@ -12,23 +13,22 @@ class EventBookIntentModel(AbstractIntentModel):
 
     _PORTFOLIO_LEVEL = 'report_portfolio'
 
-    def __init__(self, property_manager: AbstractPropertyManager, default_save_intent: bool=None,
-                 intent_type_additions: list=None):
+    def __init__(self, property_manager: EventBookPropertyManager, default_save_intent: bool=None):
         """initialisation of the Intent class.
 
         :param property_manager: the property manager class that references the intent contract.
         :param default_save_intent: (optional) The default action for saving intent in the property manager
-        :param intent_type_additions: (optional) if additional data types need to be supported as an intent param
         """
-        # set all the defaults
         default_save_intent = default_save_intent if isinstance(default_save_intent, bool) else True
-        intent_type_additions = intent_type_additions if isinstance(intent_type_additions, list) else list()
         default_replace_intent = True
-        default_intent_level = 'primary'
+        default_intent_level = self._PORTFOLIO_LEVEL
+        default_intent_order = 0
         intent_param_exclude = ['start_book', 'book_name']
-        super().__init__(property_manager=property_manager, intent_param_exclude=intent_param_exclude,
-                         default_save_intent=default_save_intent, default_intent_level=default_intent_level,
-                         default_replace_intent=default_replace_intent, intent_type_additions=intent_type_additions)
+        intent_type_additions = []
+        super().__init__(property_manager=property_manager, default_save_intent=default_save_intent,
+                         intent_param_exclude=intent_param_exclude, default_intent_level=default_intent_level,
+                         default_intent_order=default_intent_order, default_replace_intent=default_replace_intent,
+                         intent_type_additions=intent_type_additions)
 
     def run_intent_pipeline(self, exclude_books: [str, list]=None, **kwargs):
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
@@ -39,7 +39,7 @@ class EventBookIntentModel(AbstractIntentModel):
         exclude_books = self._pm.list_formatter(exclude_books)
         book_portfolio = dict()
         if self._pm.has_intent():
-            for book_name, params in self._pm.get_intent(level=self._PORTFOLIO_LEVEL).items():
+            for book_name, params in self._pm.get_intent(level=self._PORTFOLIO_LEVEL, order=0).items():
                 if book_name in exclude_books:
                     continue
                 params.update(params.pop('kwargs', {}))
@@ -59,11 +59,9 @@ class EventBookIntentModel(AbstractIntentModel):
         :param save_intent: (optional) save the intent to the Intent Properties. defaults to the default_save_intent
         """
         # resolve intent persist options
-        replace_intent = True
         intent_params = self._intent_builder(method=inspect.currentframe().f_code.co_name, params=locals())
         intent_params.update({book_name: intent_params.pop(inspect.currentframe().f_code.co_name)})
-        self._set_intend_signature(intent_params, intent_level=self._PORTFOLIO_LEVEL, save_intent=save_intent,
-                                   replace_intent=replace_intent)
+        self._set_intend_signature(intent_params, save_intent=save_intent)
         # create the event book
         if isinstance(start_book, bool) and start_book:
             if not isinstance(module_name, str) or not isinstance(event_book_cls, str):
