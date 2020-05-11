@@ -43,6 +43,8 @@ class EventBookIntentModel(AbstractIntentModel):
                 if book_name in exclude_books:
                     continue
                 params.update(params.pop('kwargs', {}))
+                # remove the creator param
+                _ = params.pop('intent_creator', 'Unknown')
                 eb = eval(f"self.set_event_book(book_name='{book_name}', start_book=True, "
                           f"save_intent=False, **{params})")
                 book_portfolio.update({book_name: eb})

@@ -40,13 +40,6 @@ class EventBookPortfolioTest(unittest.TestCase):
         self.assertEqual(['book_two'], engine.active_books)
         self.assertEqual(['book_two'], list(engine.pm.get_intent().get('report_portfolio').keys()))
 
-    def test_book_connector_template(self):
-        engine = EventBookPortfolio.from_env('task')
-        engine.set_book_connector_template(uri_path=os.environ['AISTAC_PM_PATH'])
-        engine.intent_model.set_event_book()
-        engine.add_book_connector(book_name='test')
-        engine.increment_event('save_state', pd.DataFrame.from_dict(data={'A': [1,2,3], 'B': [3,4,5]}))
-
 
 if __name__ == '__main__':
     unittest.main()
