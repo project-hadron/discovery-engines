@@ -4,7 +4,7 @@
 
 ###### Requirements without Version Specifiers ######
 setuptools
-discovery-foundation
+aistac-foundation
 discovery-connectors
 pandas >= 0.25
 numpy

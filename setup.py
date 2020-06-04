@@ -57,7 +57,7 @@ setup(
     include_package_data=True,
     package_data={},
     install_requires=[
-        'discovery-foundation',
+        'aistac-foundation',
         'discovery-connectors',
         'pandas>0.25',
         'numpy',
