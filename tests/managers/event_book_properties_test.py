@@ -10,7 +10,7 @@ from ds_engines.managers.event_book_property_manager import EventBookPropertyMan
 class EventBookPropertiesTest(unittest.TestCase):
 
     def setUp(self):
-        os.environ['AISTAC_EB_URI'] = os.path.join(os.environ['PWD'], 'work')
+        os.environ['HADRON_EB_URI'] = os.path.join(os.environ['PWD'], 'work')
         PropertyManager._remove_all()
         pass
 

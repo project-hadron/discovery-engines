@@ -13,7 +13,7 @@ from ds_engines.managers.event_book_property_manager import EventBookPropertyMan
 class EventBookPortfolioTest(unittest.TestCase):
 
     def setUp(self):
-        os.environ['AISTAC_PM_PATH'] = os.path.join(os.environ['PWD'], 'work')
+        os.environ['HADRON_PM_PATH'] = os.path.join(os.environ['PWD'], 'work')
         pass
 
     def tearDown(self):

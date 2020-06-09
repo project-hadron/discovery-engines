@@ -12,7 +12,7 @@ from aistac.handlers.dummy_handlers import DummyPersistHandler
 class EventBookIntentModelTest(unittest.TestCase):
 
     def setUp(self):
-        os.environ['AISTAC_PM_PATH'] = os.path.join(os.environ['PWD'], 'work')
+        os.environ['HADRON_PM_PATH'] = os.path.join(os.environ['PWD'], 'work')
         self.pm = EventBookPropertyManager('task')
         cc = ConnectorContract(uri='connector', module_name='aistac.handlers.dummy_handlers', handler='DummyPersistHandler')
         self.pm.set_property_connector(connector_contract=cc)

@@ -17,8 +17,8 @@ class EventBookTest(unittest.TestCase):
             shutil.rmtree('work')
         except:
             pass
-        os.environ['AISTAC_PM_PATH'] = os.path.join(os.environ['PWD'], 'work')
-        os.makedirs(os.environ['AISTAC_PM_PATH'])
+        os.environ['HADRON_PM_PATH'] = os.path.join(os.environ['PWD'], 'work')
+        os.makedirs(os.environ['HADRON_PM_PATH'])
 
     def tearDown(self):
         try:
@@ -67,8 +67,8 @@ class EventBookTest(unittest.TestCase):
         self.assertEqual(13, event_book.events_log_distance)
 
     def test_persist(self):
-        state_uri = os.path.join(os.environ['AISTAC_PM_PATH'], 'state.pickle')
-        events_uri = os.path.join(os.environ['AISTAC_PM_PATH'], 'events_log.pickle')
+        state_uri = os.path.join(os.environ['HADRON_PM_PATH'], 'state.pickle')
+        events_uri = os.path.join(os.environ['HADRON_PM_PATH'], 'events_log.pickle')
         state_connector = ConnectorContract(uri=state_uri, module_name=self.MODULE, handler=self.HANDLER)
         events_connector = ConnectorContract(uri=events_uri, module_name=self.MODULE, handler=self.HANDLER)
         engine = PandasEventBook('test', state_connector=state_connector, events_log_connector=events_connector)

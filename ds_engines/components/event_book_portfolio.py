@@ -71,14 +71,14 @@ class EventBookPortfolio(AbstractComponent):
     def from_env(cls, task_name: str, default_save=None, reset_templates: bool=None, align_connectors: bool=None,
                  default_save_intent: bool=None, **kwargs):
         """ Class Factory Method that builds the connector handlers taking the property contract path from
-        the os.environ['AISTAC_PM_PATH'] or, if not found, uses the system default,
+        the os.environ['HADRON_PM_PATH'] or, if not found, uses the system default,
                     for Linux and IOS '/tmp/components/contracts
                     for Windows 'os.environ['AppData']\\components\\contracts'
         The following environment variables can be set:
-        'AISTAC_PM_PATH': the property contract path, if not found, uses the system default
-        'AISTAC_PM_TYPE': a file type for the property manager. If not found sets as 'pickle'
-        'AISTAC_PM_MODULE': a default module package, if not set uses component default
-        'AISTAC_PM_HANDLER': a default handler. if not set uses component default
+        'HADRON_PM_PATH': the property contract path, if not found, uses the system default
+        'HADRON_PM_TYPE': a file type for the property manager. If not found sets as 'pickle'
+        'HADRON_PM_MODULE': a default module package, if not set uses component default
+        'HADRON_PM_HANDLER': a default handler. if not set uses component default
 
         This method calls to the Factory Method 'from_uri(...)' returning the initialised class instance
 
