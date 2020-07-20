@@ -2,4 +2,4 @@
 from ds_engines.components.event_book_portfolio import EventBookPortfolio
 
 # release version number picked up in the setup.py
-__version__ = "2.02.001"
+__version__ = "2.03.001"

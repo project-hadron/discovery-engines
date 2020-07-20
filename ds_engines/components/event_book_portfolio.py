@@ -16,6 +16,10 @@ class EventBookPortfolio(AbstractComponent):
     __book_portfolio = dict()
     BOOK_TEMPLATE_CONNECTOR = 'book_template_connector'
 
+    DEFAULT_MODULE = 'ds_discovery.handlers.pandas_handlers'
+    DEFAULT_SOURCE_HANDLER = 'PandasSourceHandler'
+    DEFAULT_PERSIST_HANDLER = 'PandasPersistHandler'
+
     def __init__(self, property_manager: EventBookPropertyManager, intent_model: EventBookIntentModel,
                  default_save=None, reset_templates: bool=None, align_connectors: bool=None):
         """ Encapsulation class for the transition set of classes
@@ -31,10 +35,10 @@ class EventBookPortfolio(AbstractComponent):
                          reset_templates=reset_templates, align_connectors=align_connectors)
 
     @classmethod
-    def from_uri(cls, task_name: str, uri_pm_path: str, username: str, pm_file_type: str=None, pm_module: str=None,
-                 pm_handler: str=None, pm_kwargs: dict=None, default_save=None, reset_templates: bool=None,
-                 align_connectors: bool=None, default_save_intent: bool=None, default_intent_level: bool=None,
-                 order_next_available: bool=None, default_replace_intent: bool=None):
+    def from_uri(cls, task_name: str, uri_pm_path: str, username: str, uri_pm_repo: str=None, pm_file_type: str=None,
+                 pm_module: str=None, pm_handler: str=None, pm_kwargs: dict=None, default_save=None,
+                 reset_templates: bool=None, align_connectors: bool=None, default_save_intent: bool=None,
+                 default_intent_level: bool=None, order_next_available: bool=None, default_replace_intent: bool=None):
         """ Class Factory Method to instantiates the components application. The Factory Method handles the
         instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
         See class inline docs for an example method
@@ -42,6 +46,7 @@ class EventBookPortfolio(AbstractComponent):
          :param task_name: The reference name that uniquely identifies a task or subset of the property manager
          :param uri_pm_path: A URI that identifies the resource path for the property manager.
          :param username: A user name for this task activity.
+         :param uri_pm_repo: (optional) A repository URI to initially load the property manager but not save to.
          :param pm_file_type: (optional) defines a specific file type for the property manager
          :param pm_module: (optional) the module or package name where the handler can be found
          :param pm_handler: (optional) the handler for retrieving the resource
@@ -56,14 +61,14 @@ class EventBookPortfolio(AbstractComponent):
          :param default_replace_intent: (optional) the default replace existing intent behaviour
          :return: the initialised class instance
          """
-        pm_file_type = pm_file_type if isinstance(pm_file_type, str) else 'pickle'
-        pm_module = pm_module if isinstance(pm_module, str) else 'ds_discovery.handlers.pandas_handlers'
-        pm_handler = pm_handler if isinstance(pm_handler, str) else 'PandasPersistHandler'
-        username = username if isinstance(username, str) else 'Unknown'
+        pm_file_type = pm_file_type if isinstance(pm_file_type, str) else 'json'
+        pm_module = pm_module if isinstance(pm_module, str) else cls.DEFAULT_MODULE
+        pm_handler = pm_handler if isinstance(pm_handler, str) else cls.DEFAULT_PERSIST_HANDLER
         _pm = EventBookPropertyManager(task_name=task_name, username=username)
         _intent_model = EventBookIntentModel(property_manager=_pm, default_save_intent=default_save_intent)
-        super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, pm_file_type=pm_file_type,
-                                 pm_module=pm_module, pm_handler=pm_handler, pm_kwargs=pm_kwargs)
+        super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, uri_pm_repo=uri_pm_repo,
+                                 pm_file_type=pm_file_type, pm_module=pm_module, pm_handler=pm_handler,
+                                 pm_kwargs=pm_kwargs)
         return cls(property_manager=_pm, intent_model=_intent_model, default_save=default_save,
                    reset_templates=reset_templates, align_connectors=align_connectors)
 
