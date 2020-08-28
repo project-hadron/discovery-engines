@@ -2,7 +2,7 @@ version: '3'
 services:
   domain-swarm:
     build:
-      dockerfile: Dockerfile
+      dockerfile: domain_swarm/Dockerfile
       context: domain_swarm
     volumes:
       - $HOME/code/projects/data/ddsm:/domain/data/persist

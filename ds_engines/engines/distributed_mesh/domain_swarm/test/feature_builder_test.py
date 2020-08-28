@@ -1,7 +1,7 @@
 import unittest
 import os
 import shutil
-from tests.distributed_mesh.domain_swarm.src.feature_builder import feature_builder
+from ds_engines.engines.distributed_mesh.domain_swarm.src import feature_builder
 from aistac.properties.property_manager import PropertyManager
 
 
