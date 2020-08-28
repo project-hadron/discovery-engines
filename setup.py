@@ -34,7 +34,7 @@ def find_version(*file_paths):
 
 
 setup(
-    name='discovery-components',
+    name='discovery-engines',
     version=find_version('ds_engines', '__init__.py'),
     description='Discovery Engines',
     long_description=read('README.rst'),
@@ -59,6 +59,7 @@ setup(
     install_requires=[
         'aistac-foundation',
         'discovery-connectors',
+        'discovery-transition-ds',
         'pandas>1.0',
         'numpy',
     ],
