@@ -43,7 +43,7 @@ class EventBookIntentModelTest(unittest.TestCase):
         result = im.run_intent_pipeline()
         self.assertCountEqual(['book_one', 'book_two'], result.keys())
         self.assertEqual('book_one', result.get('book_one').book_name)
-        im.set_event_book(book_name='book_three', module_name='ds_engines.engines.event_books.pandas_event_book',
+        im.set_event_book(book_name='book_three', module_name='ds_engines.components.event_books.pandas_event_book',
                           event_book_cls='PandasEventBook', intent_level=1)
         result = im.run_intent_pipeline(run_book=1)
         self.assertCountEqual(['book_one', 'book_two', 'book_three'], result.keys())

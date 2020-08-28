@@ -1,0 +1,3 @@
+# Project hadron
+aistac-foundation
+discovery-engines
