@@ -146,6 +146,9 @@ class ControllerIntentModel(AbstractIntentModel):
                                                             inplace=False)
             if tr.pm.has_connector(tr.CONNECTOR_PERSIST):
                 tr.save_clean_canonical(canonical=canonical)
+            if tr.pm.has_connector(tr.REPORT_DICTIONARY):
+                report = tr.canonical_report(canonical=canonical, stylise=False)
+                tr.save_report_canonical(tr.REPORT_DICTIONARY, report=report)
             if tr.pm.has_connector(tr.REPORT_QUALITY):
                 report = tr.report_quality(canonical=canonical)
                 tr.save_report_canonical(tr.REPORT_QUALITY, report=report)
@@ -213,7 +216,7 @@ class ControllerIntentModel(AbstractIntentModel):
         intent with the same intent (name) and the same parameter values, are removed from any level.
 
         :param intent_params: a dictionary type set of configuration representing a intent section contract
-        :param feature_name: (optional) the feature name that groups intent by a reference name
+        :param intent_level: (optional) ta level name that groups intent by a reference name
         :param intent_order: (optional) the order in which each intent should run.
                         If None: default's to -1
                         if -1: added to a level above any current instance of the intent section, level 0 if not found

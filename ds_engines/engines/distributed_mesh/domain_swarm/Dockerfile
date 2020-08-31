@@ -1,9 +1,9 @@
 FROM python:3.7
 
-WORKDIR /domain/swarm
-COPY requirements.txt /domain/swarm
+WORKDIR /root/users/ddsm
+COPY requirements.txt /root/users/ddsm
 RUN pip install --upgrade -r requirements.txt
 
-COPY src /domain/swarm
+COPY src /root/users/ddsm
 
 CMD ["python", "swarm.py"]

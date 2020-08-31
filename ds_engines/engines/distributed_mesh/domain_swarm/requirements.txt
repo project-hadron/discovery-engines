@@ -1,3 +1,5 @@
 # Project hadron
 aistac-foundation
 discovery-engines
+discovery-transition-ds
+discovery-behavioral-utils
