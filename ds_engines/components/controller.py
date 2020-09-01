@@ -1,4 +1,5 @@
 from aistac.components.abstract_component import AbstractComponent
+
 from ds_engines.managers.controller_property_manager import ControllerPropertyManager
 from ds_engines.intent.controller_intent import ControllerIntentModel
 
@@ -30,7 +31,8 @@ class Controller(AbstractComponent):
     def from_uri(cls, task_name: str, uri_pm_path: str, username: str, uri_pm_repo: str=None, pm_file_type: str=None,
                  pm_module: str=None, pm_handler: str=None, pm_kwargs: dict=None, default_save=None,
                  reset_templates: bool=None, align_connectors: bool=None, default_save_intent: bool=None,
-                 default_intent_level: bool=None, order_next_available: bool=None, default_replace_intent: bool=None):
+                 default_intent_level: bool=None, order_next_available: bool=None, default_replace_intent: bool=None,
+                 has_contract: bool=None):
         """ Class Factory Method to instantiates the components application. The Factory Method handles the
         instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
         See class inline docs for an example method
@@ -51,6 +53,7 @@ class Controller(AbstractComponent):
          :param default_intent_level: (optional) the default level intent should be saved at
          :param order_next_available: (optional) if the default behaviour for the order should be next available order
          :param default_replace_intent: (optional) the default replace existing intent behaviour
+         :param has_contract: (optional) indicates the instance should have a property manager domain contract
          :return: the initialised class instance
          """
         pm_file_type = pm_file_type if isinstance(pm_file_type, str) else 'json'
@@ -63,14 +66,14 @@ class Controller(AbstractComponent):
                                               default_replace_intent=default_replace_intent)
         super()._init_properties(property_manager=_pm, uri_pm_path=uri_pm_path, uri_pm_repo=uri_pm_repo,
                                  pm_file_type=pm_file_type, pm_module=pm_module, pm_handler=pm_handler,
-                                 pm_kwargs=pm_kwargs)
+                                 pm_kwargs=pm_kwargs, has_contract=has_contract)
         return cls(property_manager=_pm, intent_model=_intent_model, default_save=default_save,
                    reset_templates=reset_templates, align_connectors=align_connectors)
 
     @classmethod
     def from_env(cls, task_name: str=None, default_save=None, reset_templates: bool=None, align_connectors: bool=None,
                  default_save_intent: bool=None, default_intent_level: bool=None, order_next_available: bool=None,
-                 default_replace_intent: bool=None, uri_pm_repo: str=None, **kwargs):
+                 default_replace_intent: bool=None, uri_pm_repo: str=None, has_contract: bool=None, **kwargs):
         """ Class Factory Method that builds the connector handlers taking the property contract path from
         the os.environ['HADRON_PM_PATH'] or, if not found, uses the system default,
                     for Linux and IOS '/tmp/components/contracts
@@ -94,6 +97,7 @@ class Controller(AbstractComponent):
          :param order_next_available: (optional) if the default behaviour for the order should be next available order
          :param default_replace_intent: (optional) the default replace existing intent behaviour
          :param uri_pm_repo: The read only repo link that points to the raw data path to the contracts repo directory
+         :param has_contract: (optional) indicates the instance should have a property manager domain contract
          :param kwargs: to pass to the property ConnectorContract as its kwargs
          :return: the initialised class instance
          """
@@ -101,7 +105,8 @@ class Controller(AbstractComponent):
         return super().from_env(task_name=task_name, default_save=default_save, reset_templates=reset_templates,
                                 align_connectors=align_connectors, default_save_intent=default_save_intent,
                                 default_intent_level=default_intent_level, order_next_available=order_next_available,
-                                default_replace_intent=default_replace_intent, uri_pm_repo=uri_pm_repo, **kwargs)
+                                default_replace_intent=default_replace_intent, uri_pm_repo=uri_pm_repo,
+                                has_contract=has_contract, **kwargs)
 
     @classmethod
     def scratch_pad(cls) -> ControllerIntentModel:

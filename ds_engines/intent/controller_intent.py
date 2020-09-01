@@ -103,7 +103,7 @@ class ControllerIntentModel(AbstractIntentModel):
         if isinstance(run_task, bool) and run_task:
             params = {'uri_pm_repo': uri_pm_repo} if isinstance(uri_pm_repo, str) else {}
             builder: SyntheticBuilder = eval(f"SyntheticBuilder.from_env(task_name=task_name, default_save=False, "
-                                             f"**{params})", globals(), locals())
+                                             f"has_contract=True, **{params})", globals(), locals())
             canonical = builder.intent_model.run_intent_pipeline(size, columns)
             if builder.pm.has_connector(builder.CONNECTOR_OUTCOME):
                 builder.save_synthetic_canonical(canonical=canonical)
@@ -138,8 +138,8 @@ class ControllerIntentModel(AbstractIntentModel):
         # create the event book
         if isinstance(run_task, bool) and run_task:
             params = {'uri_pm_repo': uri_pm_repo} if isinstance(uri_pm_repo, str) else {}
-            tr: Transition = eval(f"Transition.from_env(task_name=task_name, default_save=False, **{params})",
-                                  globals(), locals())
+            tr: Transition = eval(f"Transition.from_env(task_name=task_name, default_save=False, has_contract=True, "
+                                  f"**{params})", globals(), locals())
             if canonical.shape == (0, 0):
                 canonical = tr.load_source_canonical()
             canonical = tr.intent_model.run_intent_pipeline(canonical=canonical, intent_levels=intent_level,
@@ -199,8 +199,8 @@ class ControllerIntentModel(AbstractIntentModel):
         # create the event book
         if isinstance(run_task, bool) and run_task:
             params = {'uri_pm_repo': uri_pm_repo} if isinstance(uri_pm_repo, str) else {}
-            fc: FeatureCatalog = eval(f"FeatureCatalog.from_env(task_name=task_name, default_save=False, **{params})",
-                                      globals(), locals())
+            fc: FeatureCatalog = eval(f"FeatureCatalog.from_env(task_name=task_name, default_save=False, "
+                                      f"has_contract=True, **{params})", globals(), locals())
             if canonical.shape == (0, 0):
                 canonical = fc.load_source_canonical()
             canonical = fc.intent_model.run_intent_pipeline(canonical=canonical, feature_name=feature_name,

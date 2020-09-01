@@ -4,7 +4,7 @@ __author__ = 'Darryl Oatridge'
 
 
 def domain_swarm():
-    swarm = Controller.from_env(default_save=False)
+    swarm = Controller.from_env(default_save=False, has_contract=True)
     swarm.run_pipeline()
 
 

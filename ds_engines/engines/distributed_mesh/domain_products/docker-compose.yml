@@ -1,0 +1,11 @@
+version: '3.8'
+services:
+  domain-swarm:
+    build:
+      dockerfile: Dockerfile
+      context: ./demo_hk_income
+    volumes:
+      - $HOME/code/projects/prod/discovery-engines/tests/data:/root/ddsm
+    environment:
+      HADRON_DEFAULT_PATH: /root/ddsm/data
+      HADRON_REPO_PATH: https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
