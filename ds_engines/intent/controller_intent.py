@@ -67,15 +67,15 @@ class ControllerIntentModel(AbstractIntentModel):
                         _ = params.pop('intent_creator', 'Unknown')
                         # add excluded params and set to False
                         params.update({'run_task': True, 'save_intent': False})
-                        if method == 'run_synthetic':
+                        if method == 'activate_synthetic':
                             canonical = eval(f"self.{method}(**{params})", globals(), locals())
                         else:
                             canonical = eval(f"self.{method}(canonical, **{params})", globals(), locals())
         return canonical
 
-    def run_synthetic(self, task_name: str, size: int, columns: [str, list]=None, uri_pm_repo: str=None,
-                      run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_level: [int, str]=None,
-                      intent_order: int=None, replace_intent: bool=None, remove_duplicates: bool=None):
+    def activate_synthetic(self, task_name: str, size: int, columns: [str, list]=None, uri_pm_repo: str=None,
+                           run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_order: int=None,
+                           intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
         """ register a synthetic component task pipeline
 
         :param task_name: the task_name reference for this component
@@ -110,9 +110,9 @@ class ControllerIntentModel(AbstractIntentModel):
             return canonical
         return
 
-    def run_transition(self, canonical: Any, task_name: str, uri_pm_repo: str=None, run_task: bool=None,
-                       intent_levels: [int, str, list]=None, save_intent: bool=None, intent_level: [int, str]=None,
-                       intent_order: int=None, replace_intent: bool=None, remove_duplicates: bool=None):
+    def activate_transition(self, canonical: Any, task_name: str, uri_pm_repo: str=None, run_task: bool=None,
+                            intent_levels: [int, str, list]=None, save_intent: bool=None, intent_order: int=None,
+                            intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
         """ register a Transition component task pipeline
 
         :param canonical: the canonical to run through the component pipeline
@@ -164,11 +164,11 @@ class ControllerIntentModel(AbstractIntentModel):
             return canonical
         return
 
-    def run_feature_catalog(self, canonical: Any, task_name: str, feature_name: [int, str]=None,
-                            uri_pm_repo: str=None, run_task: bool=None, train_size: [float, int] = None,
-                            seed: int = None,  shuffle: bool = None,save_intent: bool=None,
-                            intent_level: [int, str]=None, intent_order: int=None, replace_intent: bool=None,
-                            remove_duplicates: bool=None):
+    def activate_feature_catalog(self, canonical: Any, task_name: str, feature_name: [int, str]=None,
+                                 uri_pm_repo: str=None, run_task: bool=None, train_size: [float, int] = None,
+                                 seed: int = None, shuffle: bool = None, save_intent: bool=None,
+                                 intent_level: [int, str]=None, intent_order: int=None, replace_intent: bool=None,
+                                 remove_duplicates: bool=None):
         """ register a Feature Catalog component task pipeline
 
         :param canonical: the canonical to run through the component pipeline
