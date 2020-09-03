@@ -8,24 +8,24 @@ Python 3.7.x
 
 ## Docker run parameters
 The remote `Domain Contract` are identified through an environment variable point to where the root path of the 
-contracts can be found:
+contracts can be found, in this case we are pointing at a Repository directory and thus using `HADRON_PM_REPO`:
 
 ```
--e HADRON_PM_PATH=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
+-e HADRON_PM_REPO=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
 ``` 
 
 in this example the `Domain Contracts` locally persisting the data, rather than using a remote repository such as 
 blob storage or a Database so we need to specify where the data will go in the container so we can map the outcome.
 
 ```
--e HADRON_DEFAULT_PATH=/root/users/ddsm
+-e HADRON_DEFAULT_PATH=/root/ddsm/data
 ```
 
 now we know where the data will be put in our container we can map the volumes to '<your_local_path>' in order to 
 view the resulting outcomes
 
 ```
--v <your_local_path>:/root/users/ddsm
+-v <your_local_path>:/root/ddsm/data
 ```
 
 ## Docker Build and Run
@@ -37,10 +37,18 @@ Once complete, to run the `swarm`, execute the `docker run` command with the doc
 `ddsm/discovery-swarm` container. (remember to change `<your_local_path>` for your local path)
 ```
 docker run --rm -it 
-            -e HADRON_DEFAULT_PATH=/root/users/ddsm
-            -e HADRON_PM_REP=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
-            -v <your_local_path>:/root/users/ddsm
+            -e HADRON_DEFAULT_PATH=/root/ddsm/data
+            -e HADRON_PM_REPO=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
+            -v <your_local_path>:/root/ddsm/data
             ddsm/discovery-swarm
+```
+
+## Docker Compose
+Alternatively you can run the docker compose yaml file that can be found in the `domain_products` directory by running 
+the command:
+
+```
+docker-compose up
 ```
 
 ## What you will see
