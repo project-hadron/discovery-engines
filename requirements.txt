@@ -6,7 +6,7 @@
 setuptools
 aistac-foundation
 discovery-connectors
-pandas >= 0.25
+pandas >= 1.0
 numpy
 
 # SQl and HTML libs

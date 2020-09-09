@@ -1,5 +1,5 @@
+import pandas as pd
 from aistac.components.abstract_component import AbstractComponent
-
 from ds_engines.managers.controller_property_manager import ControllerPropertyManager
 from ds_engines.intent.controller_intent import ControllerIntentModel
 
@@ -123,7 +123,45 @@ class Controller(AbstractComponent):
         """The properties manager instance"""
         return self._component_pm
 
-    def run_pipeline(self, intent_levels: [str, int, list]=None):
+    def report_swarm(self, stylise: bool=True):
+        """ generates a report for all the current component task
+
+        :param stylise: returns a stylised dataframe with formatting
+        :return: pd.Dataframe
+        """
+        df = pd.DataFrame.from_dict(data=self.pm.report_intent(), orient='columns')
+        if stylise:
+            self._report(df, index_header='level')
+        df.set_index(keys='level', inplace=True)
+        return df
+
+    def report_notes(self, catalog: [str, list]=None, labels: [str, list]=None, regex: [str, list]=None,
+                     re_ignore_case: bool=False, stylise: bool=True, drop_dates: bool=False):
+        """ generates a report on the notes
+
+        :param catalog: (optional) the catalog to filter on
+        :param labels: (optional) s label or list of labels to filter on
+        :param regex: (optional) a regular expression on the notes
+        :param re_ignore_case: (optional) if the regular expression should be case sensitive
+        :param stylise: (optional) returns a stylised dataframe with formatting
+        :param drop_dates: (optional) excludes the 'date' column from the report
+        :return: pd.Dataframe
+        """
+        stylise = True if not isinstance(stylise, bool) else stylise
+        drop_dates = False if not isinstance(drop_dates, bool) else drop_dates
+        style = [{'selector': 'th', 'props': [('font-size', "120%"), ("text-align", "center")]},
+                 {'selector': '.row_heading, .blank', 'props': [('display', 'none;')]}]
+        report = self.pm.report_notes(catalog=catalog, labels=labels, regex=regex, re_ignore_case=re_ignore_case,
+                                      drop_dates=drop_dates)
+        df = pd.DataFrame.from_dict(data=report, orient='columns')
+        if stylise:
+            df_style = df.style.set_table_styles(style).set_properties(**{'text-align': 'left'})
+            _ = df_style.set_properties(subset=['section'], **{'font-weight': 'bold'})
+            _ = df_style.set_properties(subset=['label', 'section'], **{'font-size': "120%"})
+            return df_style
+        return df
+
+    def run_swarm(self, intent_levels: [str, int, list]=None):
         """ Runs the transition pipeline from source to persist. optionally a listen_timeout can be set for how long
         along with
         a run_count that only runs the pipeline n times.
@@ -139,3 +177,27 @@ class Controller(AbstractComponent):
         for intent in intent_levels:
             self.intent_model.run_intent_pipeline(intent_level=intent)
         return
+
+    def _report(self, canonical: pd.DataFrame, index_header: str, bold: [str, list]=None, large_font: [str, list]=None):
+        """ generates a stylised report
+
+        :param canonical
+        :param index_header:
+        :param bold:
+        :param large_font
+        :return: stylised report DataFrame
+        """
+        pd.set_option('max_colwidth', 200)
+        pd.set_option('expand_frame_repr', True)
+        bold = self.pm.list_formatter(bold).append(index_header)
+        large_font = self.pm.list_formatter(large_font).append(index_header)
+        style = [{'selector': 'th', 'props': [('font-size', "120%"), ("text-align", "center")]},
+                 {'selector': '.row_heading, .blank', 'props': [('display', 'none;')]}]
+        index = canonical[canonical[index_header].duplicated()].index.to_list()
+        canonical.loc[index, index_header] = ''
+        canonical = canonical.reset_index(drop=True)
+        df_style = canonical.style.set_table_styles(style)
+        _ = df_style.set_properties(**{'text-align': 'left'})
+        _ = df_style.set_properties(subset=bold, **{'font-weight': 'bold'})
+        _ = df_style.set_properties(subset=large_font, **{'font-size': "120%"})
+        return df_style
