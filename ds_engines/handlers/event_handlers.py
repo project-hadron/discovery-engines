@@ -1,8 +1,6 @@
 import pandas as pd
 from aistac.handlers.abstract_handlers import AbstractSourceHandler, AbstractPersistHandler
 from aistac.handlers.abstract_handlers import ConnectorContract, HandlerFactory
-from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
-from ds_engines import EventBookPortfolio
 
 
 __author__ = 'Darryl Oatridge'
@@ -43,7 +41,7 @@ class EventSourceHandler(AbstractSourceHandler):
         return self._portfolio.is_event_book(self._book_name)
 
     def has_changed(self) -> bool:
-
+        pass
 
     def reset_changed(self, changed: bool = False):
         pass

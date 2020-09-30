@@ -1,7 +1,7 @@
 import inspect
 
-from aistac.handlers.abstract_event_book import EventBookContract, EventBookFactory
 from aistac.intent.abstract_intent import AbstractIntentModel
+from ds_engines.handlers.abstract_event_book import EventBookContract, EventBookFactory
 from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 
