@@ -3,7 +3,6 @@ from datetime import datetime
 from typing import Any
 import pandas as pd
 from aistac.components.abstract_component import AbstractComponent
-from aistac.handlers.abstract_event_book import AbstractEventBook
 from aistac.handlers.abstract_handlers import ConnectorContract
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 from ds_engines.intent.event_book_intent_model import EventBookIntentModel
@@ -98,23 +97,21 @@ class EventBookPortfolio(AbstractComponent):
         """The properties manager instance"""
         return self._component_pm
 
-    @property
-    def active_books(self):
-        """returns a list of report_portfolio event names"""
-        return list(self.__book_portfolio.keys())
-
     def is_event_book(self, book_name: str) -> bool:
-        """Tests if an event book exists and if it is of type AbstractEventBook"""
-        if book_name in self.__book_portfolio.keys() and isinstance(self.__book_portfolio.get(book_name),
-                                                                    AbstractEventBook):
-            return True
-        return False
+        """Tests if an event book has been added"""
+        return self.pm.has_intent(level=book_name)
 
-    def get_event_book(self, book_name: str):
+    def get_active_book(self, book_name: str):
         """retrieves an event book instance from the report_portfolio by name"""
-        if not self.is_event_book(book_name=book_name):
+        if not self.is_active_book(book_name=book_name):
             raise ValueError(f"The event book instance '{book_name}' can't be found in the report_portfolio.")
         return self.__book_portfolio.get(book_name)
+
+    def is_active_book(self, book_name: str) -> bool:
+        """Tests if an event book instance exists"""
+        if book_name in self.__book_portfolio.keys():
+            return True
+        return False
 
     def start_portfolio(self, exclude_books: [str, list]=None,):
         """runs the intent pipeline
@@ -125,7 +122,7 @@ class EventBookPortfolio(AbstractComponent):
         self.__book_portfolio.update(portfolio)
         return
 
-    def get_frame_contract(self, book_name: str) -> ConnectorContract:
+    def get_book_contract(self, book_name: str) -> ConnectorContract:
         """ retrieves a named event book connector
 
         :param book_name: the unique name of event book
@@ -133,8 +130,8 @@ class EventBookPortfolio(AbstractComponent):
         """
         return self.pm.get_connector_contract(connector_name=book_name)
 
-    def set_frame_contract_template(self, uri_path: str=None, module_name: str=None, handler: str=None,
-                                    save: bool=None, **kwargs):
+    def set_book_contract_template(self, uri_path: str=None, module_name: str=None, handler: str=None,
+                                   save: bool=None, **kwargs):
         """ sets the book template connector that is used as the base for all event book persistence. for
         parameters not given, the persist connector template is used.
 
@@ -158,8 +155,8 @@ class EventBookPortfolio(AbstractComponent):
         self.pm_persist(save=save)
         return
 
-    def add_frame_contract(self, book_name: str, with_log: bool=None, file_type: str=None, versioned: bool=None,
-                           stamped: bool=None, save: bool=None, **kwargs):
+    def add_book_contract(self, book_name: str, with_log: bool=None, file_type: str=None, versioned: bool=None,
+                          stamped: bool=None, save: bool=None, **kwargs):
         """ adds an event book connector using the book connector template and appending a book pattern to the URI path
 
         :param book_name: the name of the event book
@@ -191,7 +188,7 @@ class EventBookPortfolio(AbstractComponent):
 
     def persist_state(self, book_name: str):
         """ persists the current state of an event book"""
-        if self.is_event_book(book_name=book_name):
+        if self.is_active_book(book_name=book_name):
             state = self.current_state(book_name=book_name)
             self.persist_canonical(connector_name=book_name, canonical=state)
         return
@@ -200,12 +197,11 @@ class EventBookPortfolio(AbstractComponent):
         """loads the current persisted state"""
         return self.load_canonical(connector_name=book_name)
 
-    def stop_event_books(self, book_names: [str, list]):
+    def stop_active_books(self, book_names: [str, list]):
         """stops the event books listed in the book names"""
         book_names = self.pm.list_formatter(book_names)
         for book in book_names:
-            if book in self.__book_portfolio.keys():
-                self.__book_portfolio.pop(book)
+            _ = self.__book_portfolio.pop(book, None)
         return
 
     def reset_portfolio(self):
@@ -234,17 +230,17 @@ class EventBookPortfolio(AbstractComponent):
         return
 
     def current_state(self, book_name: str, fillna: bool=None) -> (datetime, Any):
-        event_book = self.get_event_book(book_name=book_name)
+        event_book = self.get_active_book(book_name=book_name)
         return event_book.current_state(fillna=fillna)
 
     def add_event(self, book_name: str, event: Any):
-        return self.get_event_book(book_name=book_name).add_event(event=event)
+        return self.get_active_book(book_name=book_name).add_event(event=event)
 
     def increment_event(self, book_name: str, event: Any):
-        return self.get_event_book(book_name=book_name).increment_event(event=event)
+        return self.get_active_book(book_name=book_name).increment_event(event=event)
 
     def decrement_event(self, book_name: str, event: Any):
-        return self.get_event_book(book_name=book_name).decrement_event(event=event)
+        return self.get_active_book(book_name=book_name).decrement_event(event=event)
 
     def report_connectors(self, connector_filter: [str, list]=None, stylise: bool=True):
         """ generates a report on the source contract

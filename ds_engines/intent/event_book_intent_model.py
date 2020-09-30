@@ -29,40 +29,63 @@ class EventBookIntentModel(AbstractIntentModel):
                          default_intent_order=default_intent_order, default_replace_intent=default_replace_intent,
                          intent_type_additions=intent_type_additions)
 
-    def run_intent_pipeline(self, exclude_books: [str, list]=None, **kwargs):
+    def run_intent_pipeline(self, book_names: [int, str, list]=None, **kwargs):
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
         defined by the intent_contract.
 
-        :param exclude_books: (optional) a list of book_names in the report_portfolio not to start
+        :param book_names: (optional) a single or list of intent_level book names to run, if list, run in order given
+        :param kwargs: additional parameters to pass beyond the contracted parameters
         """
-        exclude_books = self._pm.list_formatter(exclude_books)
         book_portfolio = dict()
         if self._pm.has_intent():
-            for book_name, params in self._pm.get_intent(level=self._PORTFOLIO_LEVEL, order=0).items():
-                if book_name in exclude_books:
-                    continue
-                params.update(params.pop('kwargs', {}))
-                # remove the creator param
-                _ = params.pop('intent_creator', 'Unknown')
-                eb = eval(f"self.set_event_book(book_name='{book_name}', start_book=True, "
-                          f"save_intent=False, **{params})")
-                book_portfolio.update({book_name: eb})
+            # get the list of levels to run
+            if isinstance(book_names, (int, str, list)):
+                intent_levels = self._pm.list_formatter(book_names)
+            else:
+                intent_levels = sorted(self._pm.get_intent().keys())
+            for level in intent_levels:
+                level_key = self._pm.join(self._pm.KEY.intent_key, level)
+                for order in sorted(self._pm.get(level_key, {})):
+                    for method, params in self._pm.get(self._pm.join(level_key, order), {}).items():
+                        if method in self.__dir__():
+                            # add method kwargs to the params
+                            if isinstance(kwargs, dict):
+                                params.update(kwargs)
+                            # remove the creator param
+                            _ = params.pop('intent_creator', 'Unknown')
+                            # add excluded params and set to False
+                            params.update({'start_book': True, 'save_intent': False})
+                            book_name = level if order == 0 else f"{level}_{order}"
+                            eb = eval(f"self.{method}(book_name='{level}', **{params})", globals(), locals())
+                            book_portfolio.update({book_name: eb})
         return book_portfolio
 
-    def set_event_book(self, book_name: str, module_name: str=None, event_book_cls: str=None, start_book: bool=None,
-                       save_intent: bool=None, **kwargs):
-        """ creates an event book and/or saves the event book intent
+    def add_event_book(self, book_name: str, module_name: str=None, event_book_cls: str=None, start_book: bool=None,
+                       save_intent: bool=None, intent_order: int=None, replace_intent: bool=None,
+                       remove_duplicates: bool=None, **kwargs):
+        """ Adds an Event Book to the intent portfolio. Not that if multiple Event Books are referenced from a single
+        Event Intent, use book_name to uniquely identify each event_book within the event intent.
 
-        :param book_name: the reference book name
+        :param book_name: The unique reference name for the Event Book.
         :param module_name: (optional) if passing connectors, The module name where the Event Book class can be found
         :param event_book_cls: (optional) if passing connectors. The name of the Event Book class to instantiate
         :param start_book: (optional) if the event book should be created and returned.
-        :param save_intent: (optional) save the intent to the Intent Properties. defaults to the default_save_intent
+        :param save_intent: (optional) if the intent contract should be saved to the property manager
+        :param book_name: if the event has more than one book, this uniquely references the event book in the intent
+        :param intent_order: (optional) the order in which each intent should run.
+                        If None: default's to -1
+                        if -1: added to a level above any current instance of the intent section, level 0 if not found
+                        if int: added to the level specified, overwriting any that already exist
+        :param replace_intent: (optional) if the intent method exists at the level, or default level
+                        True - replaces the current intent method with the new
+                        False - leaves it untouched, disregarding the new intent
+        :param remove_duplicates: (optional) removes any duplicate intent in any level that is identical
+        :return:
         """
         # resolve intent persist options
-        intent_params = self._intent_builder(method=inspect.currentframe().f_code.co_name, params=locals())
-        intent_params.update({book_name: intent_params.pop(inspect.currentframe().f_code.co_name)})
-        self._set_intend_signature(intent_params, save_intent=save_intent)
+        self._set_intend_signature(self._intent_builder(method=inspect.currentframe().f_code.co_name, params=locals()),
+                                   intent_level=book_name, intent_order=intent_order, replace_intent=replace_intent,
+                                   remove_duplicates=remove_duplicates, save_intent=save_intent)
         # create the event book
         if isinstance(start_book, bool) and start_book:
             if not isinstance(module_name, str) or not isinstance(event_book_cls, str):
@@ -83,3 +106,30 @@ class EventBookIntentModel(AbstractIntentModel):
                                                         event_book_cls=event_book_cls, **kwargs)
                 return EventBookFactory.instantiate(event_book_contract=event_book_contract)
         return
+
+    # def _set_intend_signature(self, intent_params: dict, book_name: [int, str]=None, intent_order: int=None,
+    #                           replace_intent: bool=None, remove_duplicates: bool=None, save_intent: bool=None):
+    #     """ sets the intent section in the configuration file. Note: by default any identical intent, e.g.
+    #     intent with the same intent (name) and the same parameter values, are removed from any level.
+    #
+    #     :param intent_params: a dictionary type set of configuration representing a intent section contract
+    #     :param book_name: (optional) the book name that groups intent by a reference name
+    #     :param intent_order: (optional) the order in which each intent should run.
+    #                     If None: default's to -1
+    #                     if -1: added to a level above any current instance of the intent section, level 0 if not found
+    #                     if int: added to the level specified, overwriting any that already exist
+    #     :param replace_intent: (optional) if the intent method exists at the level, or default level
+    #                     True - replaces the current intent method with the new
+    #                     False - leaves it untouched, disregarding the new intent
+    #     :param remove_duplicates: (optional) removes any duplicate intent in any level that is identical
+    #     :param save_intent (optional) if the intent contract should be saved to the property manager
+    #     """
+    #     # if not specified use the event_name as the book_name
+    #     for method in intent_params.keys():
+    #         if 'book_name' not in intent_params.get(method, {}).keys():
+    #             intent_params.get(method).update({'book_name': book_name})
+    #     super()._set_intend_signature(intent_params=intent_params, intent_level=book_name, intent_order=intent_order,
+    #                                   replace_intent=replace_intent, remove_duplicates=remove_duplicates,
+    #                                   save_intent=save_intent)
+    #     return
+

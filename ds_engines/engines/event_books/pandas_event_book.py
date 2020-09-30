@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import datetime
 import pandas as pd
-from aistac.handlers.abstract_event_book import AbstractEventBook
+from ds_engines.handlers.abstract_event_book import AbstractEventBook
 from aistac.handlers.abstract_handlers import ConnectorContract, HandlerFactory
 
 __author__ = 'Darryl Oatridge'
@@ -100,6 +100,7 @@ class PandasEventBook(AbstractEventBook):
             event = event.loc[event.index.isin(self.__book_state.index), :]
         self.__book_state = pd.concat([self.__book_state, event], axis=1, sort=False, copy=False)
         self._update_counters()
+        super()._set_modified(True)
         return _time
 
     def increment_event(self, event: pd.DataFrame()) -> datetime:
@@ -109,6 +110,7 @@ class PandasEventBook(AbstractEventBook):
         _event = event.combine(self.__book_state, lambda s1, s2: s2 + s1 if len(s2.mode()) else s1)
         self.__book_state = _event.combine_first(self.__book_state)
         self._update_counters()
+        super()._set_modified(True)
         return _time
 
     def decrement_event(self, event: pd.DataFrame()) -> datetime:
@@ -118,6 +120,7 @@ class PandasEventBook(AbstractEventBook):
         _event = event.combine(self.__book_state, lambda s1, s2: s2 - s1 if len(s2.mode()) else s1)
         self.__book_state = _event.combine_first(self.__book_state)
         self._update_counters()
+        super()._set_modified(True)
         return _time
 
     def reset_state(self):
@@ -126,6 +129,7 @@ class PandasEventBook(AbstractEventBook):
         self.__event_count = 0
         self.__book_count = 0
         self.__last_book_time = datetime.now()
+        self.reset_modified()
 
     def save_state(self, with_reset: bool=None, fillna: bool=None, **kwargs):
         """ saves the current state and optionally resets the event book"""
@@ -185,6 +189,7 @@ class PandasEventBook(AbstractEventBook):
             self.__book_state = handler.load_canonical()
         else:
             self.__book_state = pd.DataFrame()
+        super()._set_modified(True)
         if isinstance(self._events_connector, ConnectorContract):
             handler = HandlerFactory.instantiate(self._events_connector)
             self.__events_log = handler.load_canonical()
