@@ -1,7 +1,7 @@
 from copy import deepcopy
 from datetime import datetime
 import pandas as pd
-from ds_engines.handlers.abstract_event_book import AbstractEventBook
+from ds_engines.engines.event_books.abstract_event_book import AbstractEventBook
 from aistac.handlers.abstract_handlers import ConnectorContract, HandlerFactory
 
 __author__ = 'Darryl Oatridge'
@@ -64,6 +64,10 @@ class PandasEventBook(AbstractEventBook):
     def set_events_log_distance(self, distance: int):
         """sets the state events log distance."""
         self._events_log_distance = distance
+
+    def set_modified(self, modified: bool):
+        """ Sets the modified flag"""
+        super()._set_modified(modified)
 
     def current_state(self, fillna: bool=None) -> pd.DataFrame:
         """returns the current state of the event book"""

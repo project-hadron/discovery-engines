@@ -1,7 +1,7 @@
 import inspect
 
 from aistac.intent.abstract_intent import AbstractIntentModel
-from ds_engines.handlers.abstract_event_book import EventBookContract, EventBookFactory
+from ds_engines.engines.event_books.abstract_event_book import EventBookContract, EventBookFactory
 from ds_engines.engines.event_books.pandas_event_book import PandasEventBook
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
 
@@ -55,7 +55,7 @@ class EventBookIntentModel(AbstractIntentModel):
                             _ = params.pop('intent_creator', 'Unknown')
                             # add excluded params and set to False
                             params.update({'start_book': True, 'save_intent': False})
-                            book_name = level if order == 0 else f"{level}_{order}"
+                            book_name = level
                             eb = eval(f"self.{method}(book_name='{level}', **{params})", globals(), locals())
                             book_portfolio.update({book_name: eb})
         return book_portfolio

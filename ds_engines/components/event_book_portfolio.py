@@ -104,7 +104,7 @@ class EventBookPortfolio(AbstractComponent):
     def get_active_book(self, book_name: str):
         """retrieves an event book instance from the report_portfolio by name"""
         if not self.is_active_book(book_name=book_name):
-            raise ValueError(f"The event book instance '{book_name}' can't be found in the report_portfolio.")
+            raise ValueError(f"The event book instance '{book_name}' cis not active.")
         return self.__book_portfolio.get(book_name)
 
     def is_active_book(self, book_name: str) -> bool:
@@ -116,7 +116,7 @@ class EventBookPortfolio(AbstractComponent):
     def start_portfolio(self, exclude_books: [str, list]=None,):
         """runs the intent pipeline
 
-        :param exclude_books: (optional) a list of book_names in the report_portfolio not to start
+        :param exclude_books: (optional) a list of book_names in the portfolio not to start
         """
         portfolio = self.intent_model.run_intent_pipeline(exclude_books=exclude_books)
         self.__book_portfolio.update(portfolio)
