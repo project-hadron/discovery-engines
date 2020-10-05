@@ -102,6 +102,9 @@ class PandasEventBook(AbstractEventBook):
         fix_index = fix_index if isinstance(fix_index, bool) else True
         if fix_index:
             event = event.loc[event.index.isin(self.__book_state.index), :]
+        intersect = set(self.__book_state.columns).intersection(set(event.columns))
+        if len(intersect) > 0:
+            self.__book_state.drop(columns=list(intersect), inplace=True)
         self.__book_state = pd.concat([self.__book_state, event], axis=1, sort=False, copy=False)
         self._update_counters()
         super()._set_modified(True)

@@ -2,6 +2,7 @@ import os
 from datetime import datetime
 from typing import Any
 import pandas as pd
+from aistac.properties.decorator_patterns import singleton
 from aistac.components.abstract_component import AbstractComponent
 from aistac.handlers.abstract_handlers import ConnectorContract
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
@@ -78,13 +79,6 @@ class EventBookPortfolio(AbstractComponent):
         """ Class Factory Method that builds the connector handlers an Amazon AWS s3 remote store."""
         _module_name = 'ds_connectors.handlers.aws_s3_handlers'
         _handler = 'AwsS3PersistHandler'
-        return _module_name, _handler
-
-    @classmethod
-    def _from_remote_redis(cls) -> (str, str):
-        """ Class Factory Method that builds the connector handlers an Amazon AWS s3 remote store."""
-        _module_name = 'ds_connectors.handlers.redis_handlers'
-        _handler = 'RedisPersistHandler'
         return _module_name, _handler
 
     @property

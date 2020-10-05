@@ -37,7 +37,7 @@ class ControllerIntentModel(AbstractIntentModel):
                          default_intent_order=default_intent_order, default_replace_intent=default_replace_intent,
                          intent_type_additions=intent_type_additions)
 
-    def run_intent_pipeline(self, intent_level: [int, str]=None, **kwargs):
+    def run_intent_pipeline(self, intent_level: [int, str]=None, synthetic_starters: dict=None, **kwargs):
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
         defined by the intent_contract.
 
@@ -47,6 +47,7 @@ class ControllerIntentModel(AbstractIntentModel):
 
         :param intent_level: The intent_level to run. if none is given then
         :param kwargs: additional kwargs to add to the parameterised intent, these will replace any that already exist
+        :param synthetic_starters
         :return Canonical with parameterised intent applied
         """
         canonical = pd.DataFrame()

@@ -1,14 +1,14 @@
 import unittest
 import os
 import shutil
+import pandas as pd
 from ds_behavioral import SyntheticBuilder
 from ds_behavioral.intent.synthetic_intent_model import SyntheticIntentModel
 from aistac.properties.property_manager import PropertyManager
+from ds_engines.engines.event_books.event_book_controller import EventBookController
 
-from ds_engines import Controller
 
-
-class ControllerTest(unittest.TestCase):
+class EventBookControllerTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
@@ -24,7 +24,6 @@ class ControllerTest(unittest.TestCase):
             if key.startswith('HADRON'):
                 del os.environ[key]
 
-        os.environ['HADRON_REPO_PATH'] = "https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/samples/hk_income_sample/contracts/"
         os.environ['HADRON_PM_PATH'] = os.path.join('work', 'config')
         os.environ['HADRON_DEFAULT_PATH'] = os.path.join('work', 'data')
         try:
@@ -44,12 +43,18 @@ class ControllerTest(unittest.TestCase):
     def tools(self) -> SyntheticIntentModel:
         return SyntheticBuilder.scratch_pad()
 
-    def test_smoke(self):
+    def test_singleton(self):
         """Basic smoke test"""
-        Controller.from_env(has_contract=False)
-
-    def test_has_intent(self):
-        pass
+        eb1 = EventBookController()
+        eb1.add_event_book('test_book')
+        event = pd.DataFrame(data={'a': [1,2,3]})
+        eb1.add_event(book_name='test_book', event=event)
+        eb2 = EventBookController()
+        eb2.is_event_book(book_name='test_book')
+        result1 = eb1.current_state(book_name='test_book')
+        result2 = eb2.current_state(book_name='test_book')
+        self.assertDictEqual(result1.to_dict(), event.to_dict())
+        self.assertDictEqual(result1.to_dict(), result2.to_dict())
 
     def test_raise(self):
         with self.assertRaises(KeyError) as context:

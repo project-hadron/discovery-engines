@@ -109,10 +109,6 @@ class AbstractEventBook(ABC):
     def reset_state(self):
         """resets the event book to its starting state"""
 
-    @abstractmethod
-    def save_state(self, with_reset: bool=None, fillna: bool=None, **kwargs):
-        """saves the current state and optionally resets the event book"""
-
 
 class EventBookFactory(object):
 
