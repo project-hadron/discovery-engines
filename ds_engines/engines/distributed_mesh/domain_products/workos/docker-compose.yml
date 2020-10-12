@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  domain-swarm:
+    build:
+      dockerfile: Dockerfile
+      context: ""
+    volumes:
+      - ../data/workos:/root/ddsm/data
+    environment:
+      HADRON_DEFAULT_PATH: /root/ddsm/data
+      HADRON_PM_REPO: https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/postgres/hadron/contracts/
+      HADRON_TRANSITION_SOURCE_PATH=

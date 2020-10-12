@@ -3,7 +3,7 @@ services:
   domain-swarm:
     build:
       dockerfile: Dockerfile
-      context: demo_hk_income
+      context: ""
     volumes:
       - ../data/titanic:/root/ddsm/data
     environment:
