@@ -123,7 +123,7 @@ class Controller(AbstractComponent):
         """The properties manager instance"""
         return self._component_pm
 
-    def report_swarm(self, stylise: bool=True):
+    def report_tasks(self, stylise: bool=True):
         """ generates a report for all the current component task
 
         :param stylise: returns a stylised dataframe with formatting
@@ -161,7 +161,7 @@ class Controller(AbstractComponent):
             return df_style
         return df
 
-    def run_swarm(self, intent_levels: [str, int, list]=None):
+    def run_controller(self, intent_levels: [str, int, list]=None):
         """ Runs the transition pipeline from source to persist. optionally a listen_timeout can be set for how long
         along with
         a run_count that only runs the pipeline n times.

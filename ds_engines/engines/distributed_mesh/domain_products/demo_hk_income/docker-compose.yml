@@ -1,6 +1,6 @@
 version: '3.8'
 services:
-  domain-swarm:
+  domain-controller:
     build:
       dockerfile: Dockerfile
       context: ""
@@ -9,3 +9,4 @@ services:
     environment:
       HADRON_DEFAULT_PATH: /root/ddsm/data
       HADRON_PM_REPO: https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/titanic_sample/hadron/contracts/
+

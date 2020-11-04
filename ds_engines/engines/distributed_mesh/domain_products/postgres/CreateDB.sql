@@ -1,15 +1,4 @@
-CREATE TABLE member (
-    member_id INT NOT NULL,
-    age	INT,
-    channel_pref VARCHAR(20),
-    city VARCHAR(30),
-    do_not_call INT,
-    email VARCHAR(50),
-    gender VARCHAR(10),
-    has_phone_number INT,
-    last_flu_shot_date TIMESTAMP,
-    prev_flu_shot INT,
-    segment VARCHAR(30),
-    state VARCHAR(30),
-    zip_code INT,
+CREATE TABLE web_origins (
+    client_id character varying(36) NOT NULL,
+    value character varying(255)
 );

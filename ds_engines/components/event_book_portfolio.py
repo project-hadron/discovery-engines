@@ -164,7 +164,7 @@ class EventBookPortfolio(AbstractComponent):
         if not self.pm.has_connector(connector_name=self.BOOK_TEMPLATE_CONNECTOR):
             raise ConnectionError(f"The book template connector has not been set")
         template = self.pm.get_connector_contract(self.BOOK_TEMPLATE_CONNECTOR)
-        uri_file = self.pm.file_pattern(connector_name=book_name, file_type=file_type, versioned=versioned,
+        uri_file = self.pm.file_pattern(name=book_name, file_type=file_type, versioned=versioned,
                                         stamped=stamped)
         uri = os.path.join(template.path, uri_file)
         if not isinstance(kwargs, dict):
@@ -175,7 +175,7 @@ class EventBookPortfolio(AbstractComponent):
         # add the log persist
         if isinstance(with_log, bool) and with_log:
             log = f"{book_name}_log"
-            uri_log = self.pm.file_pattern(connector_name=log, file_type=file_type)
+            uri_log = self.pm.file_pattern(name=log, file_type=file_type)
             lc = ConnectorContract(uri=uri, module_name=template.module_name, handler=template.handler, **kwargs)
             self.add_connector_contract(connector_name=uri_log, connector_contract=lc, template_aligned=True, save=save)
         return

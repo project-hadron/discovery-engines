@@ -6,4 +6,4 @@ RUN pip install --upgrade -r requirements.txt
 
 COPY ./src /root/ddsm
 
-CMD ["python", "swarm.py"]
+CMD ["python", "controller.py"]
