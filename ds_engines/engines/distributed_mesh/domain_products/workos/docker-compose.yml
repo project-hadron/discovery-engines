@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
       context: ""
     volumes:
-      - ../data/workos:/root/ddsm/data
+      - ../data/workos:/root/hadron/data
     environment:
-      HADRON_DEFAULT_PATH: /root/ddsm/data
+      HADRON_DEFAULT_PATH: /root/hadron/data
       HADRON_PM_REPO: https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/postgres/hadron/contracts/
       HADRON_TRANSITION_SOURCE_PATH=

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pandas as pd
 from aistac.components.abstract_component import AbstractComponent
 from ds_engines.managers.controller_property_manager import ControllerPropertyManager
@@ -32,7 +34,7 @@ class Controller(AbstractComponent):
                  pm_module: str=None, pm_handler: str=None, pm_kwargs: dict=None, default_save=None,
                  reset_templates: bool=None, align_connectors: bool=None, default_save_intent: bool=None,
                  default_intent_level: bool=None, order_next_available: bool=None, default_replace_intent: bool=None,
-                 has_contract: bool=None):
+                 has_contract: bool=None) -> Controller:
         """ Class Factory Method to instantiates the components application. The Factory Method handles the
         instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
         See class inline docs for an example method
@@ -73,7 +75,8 @@ class Controller(AbstractComponent):
     @classmethod
     def from_env(cls, task_name: str=None, default_save=None, reset_templates: bool=None, align_connectors: bool=None,
                  default_save_intent: bool=None, default_intent_level: bool=None, order_next_available: bool=None,
-                 default_replace_intent: bool=None, uri_pm_repo: str=None, has_contract: bool=None, **kwargs):
+                 default_replace_intent: bool=None, uri_pm_repo: str=None, has_contract: bool=None,
+                 **kwargs) -> Controller:
         """ Class Factory Method that builds the connector handlers taking the property contract path from
         the os.environ['HADRON_PM_PATH'] or, if not found, uses the system default,
                     for Linux and IOS '/tmp/components/contracts

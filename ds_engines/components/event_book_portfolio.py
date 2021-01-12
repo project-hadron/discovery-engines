@@ -1,8 +1,9 @@
+from __future__ import annotations
+
 import os
 from datetime import datetime
 from typing import Any
 import pandas as pd
-from aistac.properties.decorator_patterns import singleton
 from aistac.components.abstract_component import AbstractComponent
 from aistac.handlers.abstract_handlers import ConnectorContract
 from ds_engines.managers.event_book_property_manager import EventBookPropertyManager
@@ -39,7 +40,7 @@ class EventBookPortfolio(AbstractComponent):
                  pm_module: str=None, pm_handler: str=None, pm_kwargs: dict=None, default_save=None,
                  reset_templates: bool=None, align_connectors: bool=None, default_save_intent: bool=None,
                  default_intent_level: bool=None, order_next_available: bool=None, default_replace_intent: bool=None,
-                 has_contract: bool=None):
+                 has_contract: bool=None) -> EventBookPortfolio:
         """ Class Factory Method to instantiates the components application. The Factory Method handles the
         instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
         See class inline docs for an example method
@@ -73,13 +74,6 @@ class EventBookPortfolio(AbstractComponent):
                                  pm_handler=pm_handler, pm_kwargs=pm_kwargs, has_contract=has_contract)
         return cls(property_manager=_pm, intent_model=_intent_model, default_save=default_save,
                    reset_templates=reset_templates, align_connectors=align_connectors)
-
-    @classmethod
-    def _from_remote_s3(cls) -> (str, str):
-        """ Class Factory Method that builds the connector handlers an Amazon AWS s3 remote store."""
-        _module_name = 'ds_connectors.handlers.aws_s3_handlers'
-        _handler = 'AwsS3PersistHandler'
-        return _module_name, _handler
 
     @property
     def intent_model(self) -> EventBookIntentModel:

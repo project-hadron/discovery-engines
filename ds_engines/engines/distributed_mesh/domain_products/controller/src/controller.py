@@ -5,7 +5,7 @@ __author__ = 'Darryl Oatridge'
 
 def domain_controller():
     controller = Controller.from_env(default_save=False, has_contract=True)
-    controller.run_pipeline()
+    controller.run_controller()
 
 
 if __name__ == '__main__':

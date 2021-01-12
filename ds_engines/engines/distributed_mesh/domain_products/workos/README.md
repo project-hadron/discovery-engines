@@ -1,46 +1,45 @@
 # Distributed Data Science Mesh (DDSM)
 An example of using the DDSM in the form of a single 'Domain Product' run from docker container. In this example
-we are creating a `Domain Product` that reports the description, provenance and quality of a synthetically generated 
-data set pertaining to income in Hong Kong
+we are creating a `Domain Product` generates a factory healthcare members dataset
 
 ## Requirements
-Python 3.7.x
+Python 3.8.x
 
 ## Docker run parameters
 The remote `Domain Contract` are identified through an environment variable point to where the root path of the 
 contracts can be found, in this case we are pointing at a Repository directory and thus using `HADRON_PM_REPO`:
 
 ```
--e HADRON_PM_REPO=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
+-e HADRON_PM_REPO=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/hadron/hk_income/contracts/
 ``` 
 
 in this example the `Domain Contracts` locally persisting the data, rather than using a remote repository such as 
 blob storage or a Database so we need to specify where the data will go in the container so we can map the outcome.
 
 ```
--e HADRON_DEFAULT_PATH=/root/ddsm/data
+-e HADRON_DEFAULT_PATH=/root/hadron/data
 ```
 
 now we know where the data will be put in our container we can map the volumes to '<your_local_path>' in order to 
 view the resulting outcomes
 
 ```
--v <your_local_path>:/root/ddsm/data
+-v <your_local_path>:/root/hadron/data
 ```
 
 ## Docker Build and Run
 To build the container ensure you are in the root `domain_products` directory and run
 ```
-docker build -t ddsm/discovery-swarm:latest ./domain_products
+docker build -t hadron/discovery-swarm:latest ./domain_products
 ```
 Once complete, to run the `swarm`, execute the `docker run` command with the docker parameters above the
-`ddsm/discovery-swarm` container. (remember to change `<your_local_path>` for your local path)
+`hadron/discovery-swarm` container. (remember to change `<your_local_path>` for your local path)
 ```
 docker run --rm -it 
-            -e HADRON_DEFAULT_PATH=/root/ddsm/data
-            -e HADRON_PM_REPO=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/ddsm/hk_income/contracts/
-            -v <your_local_path>:/root/ddsm/data
-            ddsm/discovery-swarm
+            -e HADRON_DEFAULT_PATH=/root/hadron/data
+            -e HADRON_PM_REPO=https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/bundles/hadron/hk_income/contracts/
+            -v <your_local_path>:/root/hadron/data
+            hadron/discovery-swarm
 ```
 
 ## Docker Compose

@@ -1,0 +1,12 @@
+version: '3.8'
+services:
+  domain-controller:
+    build:
+      dockerfile: Dockerfile
+      context: controller
+    volumes:
+      - ../data/members:/root/hadron/data
+    environment:
+      HADRON_DEFAULT_PATH: /root/hadron/data
+      HADRON_PM_REPO: https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/
+

@@ -5,7 +5,7 @@ from ds_behavioral import SyntheticBuilder
 from ds_behavioral.intent.synthetic_intent_model import SyntheticIntentModel
 from aistac.properties.property_manager import PropertyManager
 
-from ds_engines.engines.distributed_mesh.domain_products.demo_hk_income.src.swarm import domain_controller
+from ds_engines.engines.distributed_mesh.domain_products.controller.src.swarm import domain_controller
 
 
 class DockerContainerTest(unittest.TestCase):

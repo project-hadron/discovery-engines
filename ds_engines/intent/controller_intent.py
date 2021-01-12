@@ -12,7 +12,7 @@ __author__ = 'Darryl Oatridge'
 
 class ControllerIntentModel(AbstractIntentModel):
 
-    DEFAULT_INTENT_LEVEL = 'primary_swarm'
+    DEFAULT_INTENT_LEVEL = 'primary_intent'
 
     def __init__(self, property_manager: ControllerPropertyManager, default_save_intent: bool=None,
                  default_intent_level: [str, int, float]=None, order_next_available: bool=None,
@@ -54,7 +54,7 @@ class ControllerIntentModel(AbstractIntentModel):
         # test if there is any intent to run
         if self._pm.has_intent():
             # get the list of levels to run
-            intent_level = intent_level if isinstance(int, str) else self.DEFAULT_INTENT_LEVEL
+            intent_level = intent_level if isinstance(intent_level, (int, str)) else self.DEFAULT_INTENT_LEVEL
             level_key = self._pm.join(self._pm.KEY.intent_key, intent_level)
             for order in sorted(self._pm.get(level_key, {})):
                 for method, params in self._pm.get(self._pm.join(level_key, order), {}).items():
@@ -68,7 +68,7 @@ class ControllerIntentModel(AbstractIntentModel):
                         _ = params.pop('intent_creator', 'Unknown')
                         # add excluded params and set to False
                         params.update({'run_task': True, 'save_intent': False})
-                        if method == 'activate_synthetic':
+                        if method == 'synthetic_builder':
                             canonical = eval(f"self.{method}(**{params})", globals(), locals())
                         else:
                             canonical = eval(f"self.{method}(canonical, **{params})", globals(), locals())
@@ -106,13 +106,21 @@ class ControllerIntentModel(AbstractIntentModel):
             builder: SyntheticBuilder = eval(f"SyntheticBuilder.from_env(task_name=task_name, default_save=False, "
                                              f"has_contract=True, **{params})", globals(), locals())
             canonical = builder.intent_model.run_intent_pipeline(size, columns)
-            if builder.pm.has_connector(builder.CONNECTOR_OUTCOME):
+            # persist the canonical
+            if builder.pm.has_connector(builder.CONNECTOR_PERSIST):
                 builder.save_synthetic_canonical(canonical=canonical)
+            # create reports
+            if builder.pm.has_connector(builder.REPORT_SCHEMA):
+                builder.save_report_canonical(report_connector_name=builder.REPORT_SCHEMA,
+                                              report=builder.report_canonical_schema(stylise=False))
+            if builder.pm.has_connector(builder.REPORT_CATALOG):
+                builder.save_report_canonical(report_connector_name=builder.REPORT_CATALOG,
+                                              report=builder.report_column_catalog(stylise=False))
             return canonical
         return
 
     def transition(self, canonical: Any, task_name: str, uri_pm_repo: str=None, run_task: bool=None,
-                   intent_levels: [int, str, list]=None, save_intent: bool=None, intent_order: int=None,
+                   transition_intent: [int, str, list]=None, save_intent: bool=None, intent_order: int=None,
                    intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
         """ register a Transition component task pipeline
 
@@ -120,7 +128,7 @@ class ControllerIntentModel(AbstractIntentModel):
         :param task_name: the task_name reference for this component
         :param uri_pm_repo: (optional) A repository URI to initially load the property manager but not save to.
         :param run_task: (optional) if when adding the task
-        :param intent_levels: (optional) an single or list of levels to run, if list, run in order given
+        :param transition_intent: (optional) an single or list of transition levels to run, if list, run in order given
         :param save_intent: (optional) if the intent contract should be saved to the property manager
         :param intent_level: (optional) the level name that groups intent by a reference name
         :param intent_order: (optional) the order in which each intent should run.
@@ -145,23 +153,31 @@ class ControllerIntentModel(AbstractIntentModel):
                 canonical = tr.load_source_canonical()
             canonical = tr.intent_model.run_intent_pipeline(canonical=canonical, intent_levels=intent_level,
                                                             inplace=False)
+            # persist the canonical
             if tr.pm.has_connector(tr.CONNECTOR_PERSIST):
                 tr.save_clean_canonical(canonical=canonical)
-            if tr.pm.has_connector(tr.REPORT_DICTIONARY):
-                report = tr.canonical_report(canonical=canonical, stylise=False)
-                tr.save_report_canonical(tr.REPORT_DICTIONARY, report=report)
-            if tr.pm.has_connector(tr.REPORT_QUALITY):
-                report = tr.report_quality(canonical=canonical)
-                tr.save_report_canonical(tr.REPORT_QUALITY, report=report)
-            if tr.pm.has_connector(tr.REPORT_SUMMARY):
-                report = tr.report_quality_summary(canonical=canonical, as_dict=True)
-                tr.save_report_canonical(tr.REPORT_SUMMARY, report=report)
+            # create reports
             if tr.pm.has_connector(tr.REPORT_SCHEMA):
-                report = tr.canonical_report(canonical=canonical, stylise=False)
-                tr.save_report_canonical(tr.REPORT_SCHEMA, report=report)
+                tr.save_report_canonical(report_connector_name=tr.REPORT_SCHEMA,
+                                         report=tr.report_canonical_schema(stylise=False))
+            if tr.pm.has_connector(tr.REPORT_SUMMARY):
+                tr.save_report_canonical(report_connector_name=tr.REPORT_SUMMARY,
+                                         report=tr.report_quality_summary(stylise=False))
+            if tr.pm.has_connector(tr.REPORT_PROVENANCE):
+                tr.save_report_canonical(report_connector_name=tr.REPORT_PROVENANCE,
+                                         report=tr.report_provenance(stylise=False))
+            if tr.pm.has_connector(tr.REPORT_FIELDS):
+                tr.save_report_canonical(report_connector_name=tr.REPORT_FIELDS,
+                                         report=tr.report_attributes(canonical=canonical, stylise=False))
+            if tr.pm.has_connector(tr.REPORT_DICTIONARY):
+                tr.save_report_canonical(report_connector_name=tr.REPORT_DICTIONARY,
+                                         report=tr.canonical_report(canonical=canonical, stylise=False))
+            if tr.pm.has_connector(tr.REPORT_QUALITY):
+                tr.save_report_canonical(report_connector_name=tr.REPORT_QUALITY,
+                                         report=tr.report_quality(canonical=canonical))
             if tr.pm.has_connector(tr.REPORT_ANALYSIS):
-                report = tr.report_statistics(canonical=canonical)
-                tr.save_report_canonical(tr.REPORT_ANALYSIS, report=report)
+                tr.save_report_canonical(report_connector_name=tr.REPORT_ANALYSIS,
+                                         report=tr.report_statistics(canonical=canonical))
             return canonical
         return
 
