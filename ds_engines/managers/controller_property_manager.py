@@ -5,6 +5,8 @@ __author__ = 'Darryl Oatridge'
 
 class ControllerPropertyManager(AbstractPropertyManager):
 
+    DEFAULT_INTENT_LEVEL = 'primary_intent'
+
     def __init__(self, task_name: str, username: str):
         """Abstract Class for the Master Properties"""
         root_keys = []

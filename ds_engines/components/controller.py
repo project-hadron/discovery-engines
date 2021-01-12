@@ -9,10 +9,13 @@ __author__ = 'Darryl Oatridge'
 
 
 class Controller(AbstractComponent):
+    """Controller Class for the management and overview of task components"""
 
     DEFAULT_MODULE = 'ds_discovery.handlers.pandas_handlers'
     DEFAULT_SOURCE_HANDLER = 'PandasSourceHandler'
     DEFAULT_PERSIST_HANDLER = 'PandasPersistHandler'
+
+    URI_PM_REPO = None
 
     def __init__(self, property_manager: ControllerPropertyManager, intent_model: ControllerIntentModel,
                  default_save=None, reset_templates: bool = None, align_connectors: bool = None):
@@ -104,6 +107,9 @@ class Controller(AbstractComponent):
          :param kwargs: to pass to the property ConnectorContract as its kwargs
          :return: the initialised class instance
          """
+        # save the controllers uri_pm_repo path
+        if isinstance(uri_pm_repo, str):
+            cls.URI_PM_REPO = uri_pm_repo
         task_name = task_name if isinstance(task_name, str) else 'master'
         return super().from_env(task_name=task_name, default_save=default_save, reset_templates=reset_templates,
                                 align_connectors=align_connectors, default_save_intent=default_save_intent,
@@ -164,12 +170,14 @@ class Controller(AbstractComponent):
             return df_style
         return df
 
-    def run_controller(self, intent_levels: [str, int, list]=None):
-        """ Runs the transition pipeline from source to persist. optionally a listen_timeout can be set for how long
-        along with
-        a run_count that only runs the pipeline n times.
+    def run_controller(self, intent_levels: [str, int, list]=None, synthetic_sizes: dict=None):
+        """ Runs the transition pipeline from source to persist. The synthetic_intent_sizes allows the additional
+        inclusion of the special case SyntheticBuilder dataset size to be specified and applied to the different intent
+        levels. If two or more Synthetic Builds are within one intent the values will be applied to all. If no size
+        is given then the default saved size is used
 
-        :param intent_levels: (optional) list of transition intent labels to run in the order given
+        :param intent_levels: (optional) list of intent labels to run in the order given
+        :param synthetic_sizes: (optional) a dictionary keyed by intent level with a synthetic size parameter
         """
         if not self.pm.has_intent():
             return
@@ -177,8 +185,12 @@ class Controller(AbstractComponent):
             intent_levels = self.pm.list_formatter(intent_levels)
         else:
             intent_levels = self.pm.list_formatter(self.pm.get_intent().keys())
+            if self.pm.DEFAULT_INTENT_LEVEL in intent_levels:
+                intent_levels.insert(0, intent_levels.pop(intent_levels.index(self.pm.DEFAULT_INTENT_LEVEL)))
         for intent in intent_levels:
-            self.intent_model.run_intent_pipeline(intent_level=intent)
+            synthetic_size = synthetic_sizes.get(intent, None) if isinstance(synthetic_sizes, dict) else None
+            self.intent_model.run_intent_pipeline(intent_level=intent, controller_repo=self.URI_PM_REPO,
+                                                  synthetic_size=synthetic_size)
         return
 
     def _report(self, canonical: pd.DataFrame, index_header: str, bold: [str, list]=None, large_font: [str, list]=None):

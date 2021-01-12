@@ -12,8 +12,6 @@ __author__ = 'Darryl Oatridge'
 
 class ControllerIntentModel(AbstractIntentModel):
 
-    DEFAULT_INTENT_LEVEL = 'primary_intent'
-
     def __init__(self, property_manager: ControllerPropertyManager, default_save_intent: bool=None,
                  default_intent_level: [str, int, float]=None, order_next_available: bool=None,
                  default_replace_intent: bool=None):
@@ -37,24 +35,25 @@ class ControllerIntentModel(AbstractIntentModel):
                          default_intent_order=default_intent_order, default_replace_intent=default_replace_intent,
                          intent_type_additions=intent_type_additions)
 
-    def run_intent_pipeline(self, intent_level: [int, str]=None, synthetic_starters: dict=None, **kwargs):
+    def run_intent_pipeline(self, intent_level: [int, str]=None, synthetic_size: int=None,
+                            controller_repo: str=None, **kwargs):
         """ Collectively runs all parameterised intent taken from the property manager against the code base as
         defined by the intent_contract.
 
         It is expected that all intent methods have the 'canonical' as the first parameter of the method signature
-        and will contain 'save_intent' as parameters. It is also assumed that all features have a feature contract to
-        save the feature outcome to
+        and will contain 'save_intent' as parameters.
 
         :param intent_level: The intent_level to run. if none is given then
         :param kwargs: additional kwargs to add to the parameterised intent, these will replace any that already exist
-        :param synthetic_starters
+        :param synthetic_size: a size to pass to any synthetic intent
+        :param controller_repo: the controller repo to use if no uri_pm_repo is within the intent parameters
         :return Canonical with parameterised intent applied
         """
         canonical = pd.DataFrame()
         # test if there is any intent to run
         if self._pm.has_intent():
             # get the list of levels to run
-            intent_level = intent_level if isinstance(intent_level, (int, str)) else self.DEFAULT_INTENT_LEVEL
+            intent_level = intent_level if isinstance(intent_level, (int, str)) else self._pm.DEFAULT_INTENT_LEVEL
             level_key = self._pm.join(self._pm.KEY.intent_key, intent_level)
             for order in sorted(self._pm.get(level_key, {})):
                 for method, params in self._pm.get(self._pm.join(level_key, order), {}).items():
@@ -68,7 +67,12 @@ class ControllerIntentModel(AbstractIntentModel):
                         _ = params.pop('intent_creator', 'Unknown')
                         # add excluded params and set to False
                         params.update({'run_task': True, 'save_intent': False})
+                        # add the controller_repo if given
+                        if isinstance(controller_repo, str) and 'uri_pm_repo' not in params.keys():
+                            params.update({'uri_pm_repo': controller_repo})
                         if method == 'synthetic_builder':
+                            if isinstance(synthetic_size, int):
+                                params['size'] = synthetic_size
                             canonical = eval(f"self.{method}(**{params})", globals(), locals())
                         else:
                             canonical = eval(f"self.{method}(canonical, **{params})", globals(), locals())
@@ -282,7 +286,7 @@ class ControllerIntentModel(AbstractIntentModel):
         :param remove_duplicates: (optional) removes any duplicate intent in any level that is identical
         :param save_intent (optional) if the intent contract should be saved to the property manager
         """
-        intent_level = intent_level if isinstance(intent_level, (str, int)) else self.DEFAULT_INTENT_LEVEL
+        intent_level = intent_level if isinstance(intent_level, (str, int)) else self._pm.DEFAULT_INTENT_LEVEL
         if save_intent or (not isinstance(save_intent, bool) and self._default_save_intent):
             if not isinstance(intent_order, int) or intent_order == -1:
                 if self._pm.get_intent():

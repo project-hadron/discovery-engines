@@ -24,7 +24,6 @@ class ControllerTest(unittest.TestCase):
             if key.startswith('HADRON'):
                 del os.environ[key]
 
-        os.environ['HADRON_REPO_PATH'] = "https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/"
         os.environ['HADRON_PM_PATH'] = os.path.join('work', 'config')
         os.environ['HADRON_DEFAULT_PATH'] = os.path.join('work', 'data')
         try:
@@ -49,8 +48,12 @@ class ControllerTest(unittest.TestCase):
         Controller.from_env(has_contract=False)
 
     def test_run_controller(self):
-        controller = Controller.from_env(uri_pm_repo="https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/")
-        controller.run_controller()
+        os.environ['HADRON_PM_REPO'] = "https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/"
+        controller = Controller.from_env()
+        result = controller.intent_model.run_intent_pipeline(intent_level='generator', synthetic_size=100)
+        self.assertEqual((100, 25), result.shape)
+
+
 
     def test_raise(self):
         with self.assertRaises(KeyError) as context:
