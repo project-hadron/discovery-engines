@@ -48,9 +48,11 @@ class ControllerTest(unittest.TestCase):
         Controller.from_env(has_contract=False)
 
     def test_run_controller(self):
-        os.environ['HADRON_PM_REPO'] = "https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/"
-        controller = Controller.from_env()
-        result = controller.intent_model.run_intent_pipeline(intent_level='generator', synthetic_size=100)
+        uri_pm_repo = "https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/"
+        # os.environ['HADRON_PM_REPO'] = uri_pm_repo
+        controller = Controller.from_env(uri_pm_repo=uri_pm_repo)
+        result = controller.intent_model.run_intent_pipeline(intent_level='generator', synthetic_size=100,
+                                                             controller_repo=uri_pm_repo)
         self.assertEqual((100, 25), result.shape)
 
 
