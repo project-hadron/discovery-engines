@@ -3,3 +3,7 @@ aistac-foundation
 discovery-engines
 discovery-transition-ds
 discovery-behavioral-utils
+requests
+pyarrow
+fsspec
+s3fs

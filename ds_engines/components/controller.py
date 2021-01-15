@@ -144,6 +144,33 @@ class Controller(AbstractComponent):
         df.set_index(keys='level', inplace=True)
         return df
 
+    def report_run_book(self, stylise: bool=True):
+        """ generates a report on all the intent
+
+        :param stylise: returns a stylised dataframe with formatting
+        :return: pd.Dataframe
+        """
+        df = pd.DataFrame.from_dict(data=self.pm.report_run_book(), orient='columns')
+        if stylise:
+            return self._report(df, index_header='name')
+        return df
+
+    def report_intent(self, levels: [str, int, list] = None, stylise: bool = True):
+        """ generates a report on all the intent
+
+        :param levels: (optional) a filter on the levels. passing a single value will report a single parameterised view
+        :param stylise: (optional) returns a stylised dataframe with formatting
+        :return: pd.Dataframe
+        """
+        if isinstance(levels, (int, str)):
+            df = pd.DataFrame.from_dict(data=self.pm.report_intent_params(level=levels), orient='columns')
+            if stylise:
+                return self._report(df, index_header='order')
+        df = pd.DataFrame.from_dict(data=self.pm.report_intent(levels=levels), orient='columns')
+        if stylise:
+            return self._report(df, index_header='level')
+        return df
+
     def report_notes(self, catalog: [str, list]=None, labels: [str, list]=None, regex: [str, list]=None,
                      re_ignore_case: bool=False, stylise: bool=True, drop_dates: bool=False):
         """ generates a report on the notes

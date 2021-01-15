@@ -1,12 +1,19 @@
 version: '3.8'
 services:
   domain-controller:
-    build:
-      dockerfile: Dockerfile
-      context: controller
-    volumes:
-      - ../data/members:/root/hadron/data
+    image: projecthadron/controller:0.1.3
+#    build:
+#      dockerfile: Dockerfile
+#      context: controller
+#    volumes:
+#      - ../data/members:/var/data
     environment:
-      HADRON_DEFAULT_PATH: /root/hadron/data
+      # Hadron Domain config
+      HADRON_DEFAULT_PATH: s3://project-hadron-cs-repo/factory/healthcare/members
       HADRON_PM_REPO: https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/
-
+      # Hadron Controller Config
+      HADRON_CONTROLLER_RUNBOOK: 'hello_world'
+      HADRON_CONTROLLER_SIZE_MEMBERS_GEN: '1000'
+      # AWS envs
+      AWS_ACCESS_KEY_ID: AKIAY4JSNX4DWOS3OT4A
+      AWS_SECRET_ACCESS_KEY: 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
