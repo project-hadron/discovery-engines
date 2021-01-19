@@ -230,9 +230,9 @@ class ControllerIntentModel(AbstractIntentModel):
             return canonical
         return
 
-    def concept_tolerance(self, canonical: Any, task_name: str, measure: [int, str], uri_pm_repo: str=None,
-                          run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_order: int=None,
-                          intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
+    def data_tolerance(self, canonical: Any, task_name: str, measure: [int, str], uri_pm_repo: str=None,
+                       run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_order: int=None,
+                       intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
         """ register a concept tolerance component task pipeline
 
         :param canonical: the canonical to run through the component pipeline

@@ -138,11 +138,16 @@ class Controller(AbstractComponent):
         :param stylise: returns a stylised dataframe with formatting
         :return: pd.Dataframe
         """
-        df = pd.DataFrame.from_dict(data=self.pm.report_intent(), orient='columns')
+        report = pd.DataFrame.from_dict(data=self.pm.report_intent(), orient='columns')
+        intent_replace = {'transition': 'Transition', 'synthetic_builder': 'SyntheticBuilder',
+                          'feature_catalog': 'FeatureCatalog', 'data_tolerance': 'DataTolerance'}
+        report['component'] = report.intent.replace(to_replace=intent_replace)
+        report['task'] = [x[0][10:] for x in report['parameters']]
+        report['parameters'] = [x[1:] for x in report['parameters']]
+        report = report.loc[:, ['level', 'order', 'component', 'task', 'parameters', 'creator']]
         if stylise:
-            self._report(df, index_header='level')
-        df.set_index(keys='level', inplace=True)
-        return df
+            return self._report(report, index_header='level')
+        return report
 
     def report_run_book(self, stylise: bool=True):
         """ generates a report on all the intent

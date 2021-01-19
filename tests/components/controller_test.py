@@ -1,6 +1,9 @@
 import unittest
 import os
 import shutil
+import pandas as pd
+from pprint import pprint
+
 from ds_behavioral import SyntheticBuilder
 from ds_behavioral.intent.synthetic_intent_model import SyntheticIntentModel
 from aistac.properties.property_manager import PropertyManager
@@ -55,7 +58,11 @@ class ControllerTest(unittest.TestCase):
                                                              controller_repo=uri_pm_repo)
         self.assertEqual((100, 25), result.shape)
 
-
+    def test_report_tasks(self):
+        uri_pm_repo = "https://raw.githubusercontent.com/project-hadron/hadron-asset-bank/master/contracts/healthcare/factory/members/"
+        controller = Controller.from_env(uri_pm_repo=uri_pm_repo)
+        result = controller.report_tasks(stylise=False)
+        self.assertEqual(['level', 'order', 'component', 'task', 'parameters', 'creator'], list(result.columns))
 
     def test_raise(self):
         with self.assertRaises(KeyError) as context:
