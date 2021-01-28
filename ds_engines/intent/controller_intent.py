@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from aistac.intent.abstract_intent import AbstractIntentModel
 from ds_behavioral import SyntheticBuilder
-from ds_discovery import FeatureCatalog, Transition, ConceptTolerance
+from ds_discovery import FeatureCatalog, Transition, DataTolerance
 from ds_engines.managers.controller_property_manager import ControllerPropertyManager
 
 __author__ = 'Darryl Oatridge'
@@ -233,7 +233,7 @@ class ControllerIntentModel(AbstractIntentModel):
     def data_tolerance(self, canonical: Any, task_name: str, measure: [int, str], uri_pm_repo: str=None,
                        run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_order: int=None,
                        intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
-        """ register a concept tolerance component task pipeline
+        """ register a data tolerance component task pipeline
 
         :param canonical: the canonical to run through the component pipeline
         :param task_name: the task_name reference for this component
@@ -259,8 +259,8 @@ class ControllerIntentModel(AbstractIntentModel):
         # create the event book
         if isinstance(run_task, bool) and run_task:
             params = {'uri_pm_repo': uri_pm_repo} if isinstance(uri_pm_repo, str) else {}
-            ct: ConceptTolerance = eval(f"ConceptTolerance.from_env(task_name=task_name, default_save=False, "
-                                        f"has_contract=True, **{params})", globals(), locals())
+            ct: DataTolerance = eval(f"DataTolerance.from_env(task_name=task_name, default_save=False, "
+                                     f"has_contract=True, **{params})", globals(), locals())
             if canonical.shape == (0, 0):
                 canonical = ct.load_source_canonical()
             canonical = ct.intent_model.run_intent_pipeline(canonical=canonical, measure=measure)

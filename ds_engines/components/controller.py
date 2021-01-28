@@ -15,10 +15,15 @@ class Controller(AbstractComponent):
     DEFAULT_SOURCE_HANDLER = 'PandasSourceHandler'
     DEFAULT_PERSIST_HANDLER = 'PandasPersistHandler'
 
+    REPORT_USE_CASE = 'use_case'
+
     URI_PM_REPO = None
 
     def __init__(self, property_manager: ControllerPropertyManager, intent_model: ControllerIntentModel,
-                 default_save=None, reset_templates: bool = None, align_connectors: bool = None):
+                 default_save=None, reset_templates: bool = None, template_path: str = None,
+                 template_module: str = None,
+                 template_source_handler: str = None, template_persist_handler: str = None,
+                 align_connectors: bool = None):
         """ Encapsulation class for the transition set of classes
 
         :param property_manager: The contract property manager instance for this component
@@ -26,18 +31,25 @@ class Controller(AbstractComponent):
         :param default_save: The default behaviour of persisting the contracts:
                     if False: The connector contracts are kept in memory (useful for restricted file systems)
         :param reset_templates: (optional) reset connector templates from environ variables (see `report_environ()`)
+        :param template_path: (optional) a template path to use if the environment variable does not exist
+        :param template_module: (optional) a template module to use if the environment variable does not exist
+        :param template_source_handler: (optional) a template source handler to use if no environment variable
+        :param template_persist_handler: (optional) a template persist handler to use if no environment variable
         :param align_connectors: (optional) resets aligned connectors to the template
         """
         super().__init__(property_manager=property_manager, intent_model=intent_model, default_save=default_save,
-                         reset_templates=reset_templates, align_connectors=align_connectors)
+                         reset_templates=reset_templates, template_path=template_path, template_module=template_module,
+                         template_source_handler=template_source_handler,
+                         template_persist_handler=template_persist_handler, align_connectors=align_connectors)
         self._raw_attribute_list = []
 
     @classmethod
     def from_uri(cls, task_name: str, uri_pm_path: str, username: str, uri_pm_repo: str=None, pm_file_type: str=None,
                  pm_module: str=None, pm_handler: str=None, pm_kwargs: dict=None, default_save=None,
-                 reset_templates: bool=None, align_connectors: bool=None, default_save_intent: bool=None,
-                 default_intent_level: bool=None, order_next_available: bool=None, default_replace_intent: bool=None,
-                 has_contract: bool=None) -> Controller:
+                 reset_templates: bool=None, template_path: str=None, template_module: str=None,
+                 template_source_handler: str=None, template_persist_handler: str=None, align_connectors: bool=None,
+                 default_save_intent: bool=None, default_intent_level: bool=None, order_next_available: bool=None,
+                 default_replace_intent: bool=None, has_contract: bool=None) -> Controller:
         """ Class Factory Method to instantiates the components application. The Factory Method handles the
         instantiation of the Properties Manager, the Intent Model and the persistence of the uploaded properties.
         See class inline docs for an example method
@@ -53,6 +65,10 @@ class Controller(AbstractComponent):
          :param default_save: (optional) if the configuration should be persisted. default to 'True'
          :param reset_templates: (optional) reset connector templates from environ variables. Default True
                                 (see `report_environ()`)
+         :param template_path: (optional) a template path to use if the environment variable does not exist
+         :param template_module: (optional) a template module to use if the environment variable does not exist
+         :param template_source_handler: (optional) a template source handler to use if no environment variable
+         :param template_persist_handler: (optional) a template persist handler to use if no environment variable
          :param align_connectors: (optional) resets aligned connectors to the template. default Default True
          :param default_save_intent: (optional) The default action for saving intent in the property manager
          :param default_intent_level: (optional) the default level intent should be saved at
@@ -73,7 +89,9 @@ class Controller(AbstractComponent):
                                  uri_pm_repo=uri_pm_repo, pm_file_type=pm_file_type, pm_module=pm_module,
                                  pm_handler=pm_handler, pm_kwargs=pm_kwargs, has_contract=has_contract)
         return cls(property_manager=_pm, intent_model=_intent_model, default_save=default_save,
-                   reset_templates=reset_templates, align_connectors=align_connectors)
+                   reset_templates=reset_templates, template_path=template_path, template_module=template_module,
+                   template_source_handler=template_source_handler, template_persist_handler=template_persist_handler,
+                   align_connectors=align_connectors)
 
     @classmethod
     def from_env(cls, task_name: str=None, default_save=None, reset_templates: bool=None, align_connectors: bool=None,
@@ -131,6 +149,47 @@ class Controller(AbstractComponent):
     def pm(self) -> ControllerPropertyManager:
         """The properties manager instance"""
         return self._component_pm
+
+    def set_use_case(self, title: str=None, domain: str=None, description: str=None, situation: str=None,
+                     opportunity: str=None, actions: str=None, save: bool=None):
+        """sets the use_case values. Only sets those passed
+
+        :param title: (optional) the title of the use_case
+        :param domain: (optional) the domain it sits within
+        :param description: (optional) a description of the use_case
+        :param situation: (optional) The inferred 'Why', 'What' or 'How' and predicted 'therefore can we'
+        :param opportunity: (optional) The opportunity of the situation
+        :param actions: (optional) the actions to fulfil the opportunity
+        :param save: (optional) if True, save to file. Default is True
+        """
+
+        self.pm.set_use_case(title=title, domain=domain, description=description, situation=situation,
+                             opportunity=opportunity, actions=actions)
+        self.pm_persist(save=save)
+
+    def reset_use_case(self, save: bool=None):
+        """resets the use_case back to its default values"""
+        self.pm.reset_use_case()
+        self.pm_persist(save)
+
+    def report_use_case(self, as_dict: bool=None, stylise: bool=None):
+        """ a report on the use_case set as part of the domain contract
+
+        :param as_dict: (optional) if the result should be a dictionary. Default is False
+        :param stylise: (optional) if as_dict is False, if the return dataFrame should be stylised
+        :return:
+        """
+        as_dict = as_dict if isinstance(as_dict, bool) else False
+        stylise = stylise if isinstance(stylise, bool) else True
+        report = self.pm.report_use_case()
+        if as_dict:
+            return report
+        report = pd.DataFrame(report, index=['values'])
+        report = report.transpose().reset_index()
+        report.columns = ['use_case', 'values']
+        if stylise:
+            return self._report(report, index_header='use_case')
+        return report
 
     def report_tasks(self, stylise: bool=True):
         """ generates a report for all the current component task

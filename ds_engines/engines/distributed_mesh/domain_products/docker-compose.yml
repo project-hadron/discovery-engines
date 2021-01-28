@@ -2,9 +2,6 @@ version: '3.8'
 services:
   domain-controller:
     image: projecthadron/controller:0.1.3
-#    build:
-#      dockerfile: Dockerfile
-#      context: controller
 #    volumes:
 #      - ../data/members:/var/data
     environment:
