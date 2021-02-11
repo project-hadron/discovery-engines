@@ -3,8 +3,7 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from aistac.intent.abstract_intent import AbstractIntentModel
-from ds_behavioral import SyntheticBuilder
-from ds_discovery import FeatureCatalog, Transition, DataTolerance
+from ds_discovery import FeatureCatalog, Transition, DataDrift, Wrangle, SyntheticBuilder
 from ds_engines.managers.controller_property_manager import ControllerPropertyManager
 
 __author__ = 'Darryl Oatridge'
@@ -132,7 +131,7 @@ class ControllerIntentModel(AbstractIntentModel):
         :param task_name: the task_name reference for this component
         :param uri_pm_repo: (optional) A repository URI to initially load the property manager but not save to.
         :param run_task: (optional) if when adding the task
-        :param transition_intent: (optional) an single or list of transition levels to run, if list, run in order given
+        :param transition_intent: (optional) a single or list of transition levels to run, if list, run in order given
         :param save_intent: (optional) if the intent contract should be saved to the property manager
         :param intent_level: (optional) the level name that groups intent by a reference name
         :param intent_order: (optional) the order in which each intent should run.
@@ -179,9 +178,46 @@ class ControllerIntentModel(AbstractIntentModel):
             if tr.pm.has_connector(tr.REPORT_QUALITY):
                 tr.save_report_canonical(report_connector_name=tr.REPORT_QUALITY,
                                          report=tr.report_quality(canonical=canonical))
-            if tr.pm.has_connector(tr.REPORT_ANALYSIS):
-                tr.save_report_canonical(report_connector_name=tr.REPORT_ANALYSIS,
-                                         report=tr.report_statistics(canonical=canonical))
+            return canonical
+        return
+
+    def wrangle(self, canonical: Any, task_name: str, uri_pm_repo: str=None, run_task: bool=None,
+                wrangled_intent: [int, str, list]=None, save_intent: bool=None, intent_order: int=None,
+                intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
+        """ register a Transition component task pipeline
+
+        :param canonical: the canonical to run through the component pipeline
+        :param task_name: the task_name reference for this component
+        :param uri_pm_repo: (optional) A repository URI to initially load the property manager but not save to.
+        :param run_task: (optional) if when adding the task
+        :param wrangled_intent: (optional) an single or list of wrangled levels to run, if list, run in order given
+        :param save_intent: (optional) if the intent contract should be saved to the property manager
+        :param intent_level: (optional) the level name that groups intent by a reference name
+        :param intent_order: (optional) the order in which each intent should run.
+                        If None: default's to -1
+                        if -1: added to a level above any current instance of the intent section, level 0 if not found
+                        if int: added to the level specified, overwriting any that already exist
+        :param replace_intent: (optional) if the intent method exists at the level, or default level
+                        True - replaces the current intent method with the new
+                        False - leaves it untouched, disregarding the new intent
+        :param remove_duplicates: (optional) removes any duplicate intent in any level that is identical
+       """
+        # resolve intent persist options
+        self._set_intend_signature(self._intent_builder(method=inspect.currentframe().f_code.co_name, params=locals()),
+                                   intent_level=intent_level, intent_order=intent_order, replace_intent=replace_intent,
+                                   remove_duplicates=remove_duplicates, save_intent=save_intent)
+        # create the event book
+        if isinstance(run_task, bool) and run_task:
+            params = {'uri_pm_repo': uri_pm_repo} if isinstance(uri_pm_repo, str) else {}
+            wr: Wrangle = eval(f"Transition.from_env(task_name=task_name, default_save=False, has_contract=True, "
+                                  f"**{params})", globals(), locals())
+            if canonical.shape == (0, 0):
+                canonical = wr.load_source_canonical()
+            canonical = wr.intent_model.run_intent_pipeline(canonical=canonical, intent_levels=intent_level,
+                                                            inplace=False)
+            # persist the canonical
+            if wr.pm.has_connector(wr.CONNECTOR_PERSIST):
+                wr.save_wrangled_canonical(canonical=canonical)
             return canonical
         return
 
@@ -230,9 +266,9 @@ class ControllerIntentModel(AbstractIntentModel):
             return canonical
         return
 
-    def data_tolerance(self, canonical: Any, task_name: str, measure: [int, str], uri_pm_repo: str=None,
-                       run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_order: int=None,
-                       intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
+    def data_drift(self, canonical: Any, task_name: str, measure: [int, str], uri_pm_repo: str=None,
+                   run_task: bool=None, persist: bool=None, save_intent: bool=None, intent_order: int=None,
+                   intent_level: [int, str]=None, replace_intent: bool=None, remove_duplicates: bool=None):
         """ register a data tolerance component task pipeline
 
         :param canonical: the canonical to run through the component pipeline
@@ -259,8 +295,8 @@ class ControllerIntentModel(AbstractIntentModel):
         # create the event book
         if isinstance(run_task, bool) and run_task:
             params = {'uri_pm_repo': uri_pm_repo} if isinstance(uri_pm_repo, str) else {}
-            ct: DataTolerance = eval(f"DataTolerance.from_env(task_name=task_name, default_save=False, "
-                                     f"has_contract=True, **{params})", globals(), locals())
+            ct: DataDrift = eval(f"DataTolerance.from_env(task_name=task_name, default_save=False, "
+                                 f"has_contract=True, **{params})", globals(), locals())
             if canonical.shape == (0, 0):
                 canonical = ct.load_source_canonical()
             canonical = ct.intent_model.run_intent_pipeline(canonical=canonical, measure=measure)
